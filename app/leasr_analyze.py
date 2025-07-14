@@ -11,6 +11,7 @@ import numpy_financial as npf
 st.set_page_config(layout="wide")
 
 # --- Access Code Protection
+st.sidebar.info("Private beta – please do not share your access code.")
 access_code = st.sidebar.text_input("Enter Access Code", type="password")
 if access_code != "crebeta25":
     st.warning("Please enter the correct access code to view the app.")
