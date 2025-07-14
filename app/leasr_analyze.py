@@ -92,6 +92,7 @@ st.markdown("""
 # --- Auth0 Placeholder
 st.sidebar.title("Login")
 st.sidebar.success("Logged in as demo.user@example.com")
+st.sidebar.info("Private beta – please do not share your access code.")
 
 # --- Page Title
 st.markdown("""
