@@ -264,7 +264,7 @@ for col, (label, rent_income, dp_pct, rate, app_rate, key_prefix) in zip([col1, 
             amort_df_formatted[col_] = amort_df_formatted[col_].apply(lambda x: f"{x:.1f}%")
         amort_df_formatted["DCR"] = amort_df_formatted["DCR"].apply(lambda x: f"{x:.2f}" if not pd.isna(x) else "")
 
-        results[label] = (amort_df_formatted, cash_flow, amort_df)
+        results[label] = (amort_df_formatted, cash_flow, amort_df, cap_rate, irr, coc_return)
         st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Amortization Tables ---
@@ -291,11 +291,14 @@ if st.button("Download PDF Report"):
     for label in ["Conservative", "Base Case", "Optimistic"]:
         c.drawString(50, y, f"{label} Scenario")
         y -= 20
-        df = results[label][2]
-        c.drawString(50, y, f"Cap Rate: {format_percent(df['Cap Rate'].iloc[-1])}")
-        c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(results[label][1])}")
-        c.drawString(50, y-40, f"CoC Return: {format_percent(df['ROI'].iloc[-1])}")
-        c.drawString(50, y-60, f"IRR: {format_percent(df['IRR'].iloc[-1])}")
+        cap_rate = results[label][3]  # Use cap_rate from results
+        cash_flow = results[label][1]  # Use cash_flow from results
+        coc_return = results[label][5]  # Use coc_return from results
+        irr = results[label][4]  # Use irr from results
+        c.drawString(50, y, f"Cap Rate: {format_percent(cap_rate)}")
+        c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(cash_flow)}")
+        c.drawString(50, y-40, f"CoC Return: {format_percent(coc_return)}")
+        c.drawString(50, y-60, f"IRR:ľ{format_percent(irr)}")
         y -= 100
     
     c.showPage()
