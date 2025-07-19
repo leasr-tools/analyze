@@ -6,15 +6,33 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy_financial as npf
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
 
 # --- Page Config for Full Width
 st.set_page_config(layout="wide")
 
 # --- Access Code Protection
 st.sidebar.info("Private beta – please do not share your access code.")
-access_code = st.sidebar.text_input("Enter Access Code", type="password")
-if access_code != "crebeta25":
-    st.warning("Please enter the correct access code to view the app.")
+
+# Initialize session state for access code
+if 'access_granted' not in st.session_state:
+    st.session_state.access_granted = False
+
+# Access code input and button
+access_code = st.sidebar.text_input("Enter Access Code", type="password", key="access_code")
+if st.sidebar.button("Enter"):
+    if access_code == "crebeta25":
+        st.session_state.access_granted = True
+        st.sidebar.success("Access granted!")
+    else:
+        st.session_state.access_granted = False
+        st.sidebar.error("Incorrect access code. Please try again.")
+
+# Stop the app if access is not granted
+if not st.session_state.access_granted:
+    st.warning("Please enter the correct access code and click 'Enter' to view the app.")
     st.stop()
 
 # --- Global Styling
@@ -113,7 +131,6 @@ def format_tooltip(val):
     return f"${val/1000:,.0f}k"
 
 # Function to perform deal analysis
-
 def analyze_deal(purchase_price, rent_income, expenses, down_payment_pct, loan_interest, loan_term, appreciation_rate, hold_period, io_years):
     down_payment = purchase_price * (down_payment_pct / 100)
     loan_amount = purchase_price - down_payment
@@ -173,13 +190,17 @@ def analyze_deal(purchase_price, rent_income, expenses, down_payment_pct, loan_i
 
 # --- Input Section
 st.markdown("<div class='section-header'><h2>Inputs</h2></div>", unsafe_allow_html=True)
-hold_period = st.slider("Hold Period (years)", 1, 30, 10)
-io_years = st.slider("Interest-Only Period (years)", 0, 10, 0)
 
-purchase_price = 1000000
-expenses = 4000
-loan_term = 30
+# General Inputs
+st.markdown("<div class='styled-section'><h3>General Deal Parameters</h3>", unsafe_allow_html=True)
+purchase_price = st.number_input("Purchase Price ($)", min_value=10000, value=1000000, step=10000, key="purchase_price")
+expenses = st.number_input("Monthly Operating Expenses ($)", min_value=0, value=4000, step=500, key="expenses")
+hold_period = st.slider("Hold Period (years)", 1, 30, 10, key="hold_period")
+io_years = st.slider("Interest-Only Period (years)", 0, 10, 0, key="io_years")
+loan_term = st.slider("Loan Term (years)", 5, 30, 30, key="loan_term")
+st.markdown("</div>", unsafe_allow_html=True)
 
+# Scenario-Specific Inputs
 scenarios = [
     ("Conservative", 9000, 30, 5.5, 2.0, "cons"),
     ("Base Case", 10000, 25, 5.0, 3.0, "base"),
@@ -201,12 +222,37 @@ for col, (label, rent_income, dp_pct, rate, app_rate, key_prefix) in zip([col1, 
         cash_flow, coc_return, future_value, equity_gain, cap_rate, irr, amort_df = analyze_deal(
             purchase_price, rent_income, expenses, down_payment_pct, loan_interest, loan_term, appreciation_rate, hold_period, io_years)
 
-        st.metric("Cap Rate", format_percent(cap_rate))
-        st.metric(f"Cash Flow in Year {hold_period}", format_dollar(cash_flow))
-        st.metric("CoC Return", format_percent(coc_return))
-        st.metric(f"IRR ({hold_period} yrs)", format_percent(irr))
-        st.metric(f"Value in {hold_period} yrs", format_dollar(future_value))
-        st.metric("Equity Gain", format_dollar(equity_gain))
+        # Metrics with tooltips
+        st.markdown(f"""
+            <div class='metric-block' title='Cap Rate: Net Operating Income divided by Purchase Price, indicating the annual return.'>
+                Cap Rate: {format_percent(cap_rate)}
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='metric-block' title='Cash Flow: Annual net income after expenses and debt service in the final year.'>
+                Cash Flow in Year {hold_period}: {format_dollar(cash_flow)}
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='metric-block' title='Cash-on-Cash Return: Annual cash flow relative to the down payment, expressed as a percentage.'>
+                CoC Return: {format_percent(coc_return)}
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='metric-block' title='IRR: Internal Rate of Return, the annualized return accounting for all cash flows over the hold period.'>
+                IRR ({hold_period} yrs): {format_percent(irr)}
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='metric-block' title='Value: Projected property value at the end of the hold period based on appreciation.'>
+                Value in {hold_period} yrs: {format_dollar(future_value)}
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='metric-block' title='Equity Gain: Increase in property value minus remaining loan balance.'>
+                Equity Gain: {format_dollar(equity_gain)}
+            </div>
+        """, unsafe_allow_html=True)
 
         amort_df_formatted = amort_df.copy()
         dollar_cols = ["Property Value", "Remaining Balance", "Equity", "NOI", "Cash Flow", "Interest Paid", "Principal Paid", "Profit"]
@@ -227,6 +273,62 @@ for label in ["Conservative", "Base Case", "Optimistic"]:
     st.markdown(f"### {label}")
     st.dataframe(results[label][0], use_container_width=True)
 
+# --- Export PDF Report ---
+st.markdown("<div class='section-header'><h2>Export Report</h2></div>", unsafe_allow_html=True)
+if st.button("Download PDF Report"):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica", 12)
+    y = 750
+    c.drawString(50, y, "CRE Deal Analyzer Report")
+    y -= 30
+    c.drawString(50, y, f"Purchase Price: ${purchase_price:,.0f}")
+    c.drawString(50, y-20, f"Monthly Expenses: ${expenses:,.0f}")
+    c.drawString(50, y-40, f"Hold Period: {hold_period} years")
+    c.drawString(50, y-60, f"Loan Term: {loan_term} years")
+    y -= 100
+    
+    for label in ["Conservative", "Base Case", "Optimistic"]:
+        c.drawString(50, y, f"{label} Scenario")
+        y -= 20
+        df = results[label][2]
+        c.drawString(50, y, f"Cap Rate: {format_percent(df['Cap Rate'].iloc[-1])}")
+        c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(results[label][1])}")
+        c.drawString(50, y-40, f"CoC Return: {format_percent(df['ROI'].iloc[-1])}")
+        c.drawString(50, y-60, f"IRR: {format_percent(df['IRR'].iloc[-1])}")
+        y -= 100
+    
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    st.download_button(
+        label="Download PDF",
+        data=buffer,
+        file_name="cre_deal_report.pdf",
+        mime="application/pdf"
+    )
+
+# --- Sensitivity Analysis ---
+st.markdown("<div class='section-header'><h2>Sensitivity Analysis</h2></div>", unsafe_allow_html=True)
+st.write("Impact of Rental Income (±10%) on IRR")
+sensitivity_data = []
+
+for label, rent_income, dp_pct, rate, app_rate, _ in scenarios:
+    rent_low = rent_income * 0.9
+    rent_high = rent_income * 1.1
+    _, _, _, _, _, irr_low, _ = analyze_deal(purchase_price, rent_low, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
+    _, _, _, _, _, irr_base, _ = analyze_deal(purchase_price, rent_income, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
+    _, _, _, _, _, irr_high, _ = analyze_deal(purchase_price, rent_high, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
+    sensitivity_data.append({
+        "Scenario": label,
+        "Rent (-10%)": f"{format_percent(irr_low)}",
+        "Base Rent": f"{format_percent(irr_base)}",
+        "Rent (+10%)": f"{format_percent(irr_high)}"
+    })
+
+sensitivity_df = pd.DataFrame(sensitivity_data)
+st.dataframe(sensitivity_df, use_container_width=True)
+
 # --- Donut Charts ---
 st.markdown("<div class='section-header'><h2>Ratios</h2></div>", unsafe_allow_html=True)
 donut_cols = st.columns(3)
@@ -236,7 +338,7 @@ legend_colors = {"Interest": "#7b68ee", "Principal": "#3cb371", "Cash Flow": "#f
 
 for col, (label, color) in zip(donut_cols, zip(["Conservative", "Base Case", "Optimistic"], colors)):
     with col:
-        st.markdown(f"<div class='chart-section-title'>{label}</div>", unsafe_allow_html=True)  # <<< Add this line
+        st.markdown(f"<div class='chart-section-title'>{label}</div>", unsafe_allow_html=True)
         df = results[label][2]
         latest = df.iloc[-1]
         values = [latest["Interest Paid"], latest["Principal Paid"], latest["Cash Flow"]]
@@ -251,8 +353,8 @@ for col, (label, color) in zip(donut_cols, zip(["Conservative", "Base Case", "Op
         )])
         fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0))
         st.plotly_chart(fig, use_container_width=True)
-      
-legend_html = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{legend_colors[k]}; font-weight:bold;'>&#9632; {k}</span>" for k in labels]) + "</div>"
+
+legend_html = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{legend_colors[k]}; font-weight:bold;'>■ {k}</span>" for k in labels]) + "</div>"
 st.markdown(legend_html, unsafe_allow_html=True)
 
 # --- Time Series ---
@@ -276,6 +378,5 @@ for col, label in zip(time_cols, ["Conservative", "Base Case", "Optimistic"]):
     fig.update_traces(hovertemplate='%{y:$,.0f}')
     col.plotly_chart(fig, use_container_width=True)
 
-legend_html2 = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{c}; font-weight:bold;'>&#9632; {l}</span>" for l, c in zip(trend_labels, trend_colors)]) + "</div>"
+legend_html2 = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{c}; font-weight:bold;'>■ {l}</span>" for l, c in zip(trend_labels, trend_colors)]) + "</div>"
 st.markdown(legend_html2, unsafe_allow_html=True)
-
