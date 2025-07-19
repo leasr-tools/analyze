@@ -192,6 +192,39 @@ def analyze_deal(purchase_price, rent_income, expenses, down_payment_pct, loan_i
     amort_df = pd.DataFrame(schedule)
     return cash_flow, (cash_flow * hold_period) / down_payment * 100, property_value, equity, cap_rate, irr * 100, amort_df
 
+# --- Cached PDF Generation Function
+@st.cache_data
+def generate_pdf_report(purchase_price, expenses, hold_period, loan_term, results):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setFont("Helvetica", 12)
+    y = 750
+    c.drawString(50, y, "CRE Deal Analyzer Report")
+    y -= 30
+    c.drawString(50, y, f"Purchase Price: {format_dollar(purchase_price)}")
+    c.drawString(50, y-20, f"Monthly Expenses: {format_dollar(expenses)}")
+    c.drawString(50, y-40, f"Hold Period: {hold_period} years")
+    c.drawString(50, y-60, f"Loan Term: {loan_term} years")
+    y -= 100
+    
+    for label in ["Conservative", "Base Case", "Optimistic"]:
+        c.drawString(50, y, f"{label} Scenario")
+        y -= 20
+        cap_rate = results[label][3]
+        cash_flow = results[label][1]
+        coc_return = results[label][5]
+        irr = results[label][4]
+        c.drawString(50, y, f"Cap Rate: {format_percent(cap_rate)}")
+        c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(cash_flow)}")
+        c.drawString(50, y-40, f"CoC Return: {format_percent(coc_return)}")
+        c.drawString(50, y-60, f"IRR: {format_percent(irr)}")
+        y -= 100
+    
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
 # --- Input Section
 st.markdown("<div class='section-header'><h2>Inputs</h2></div>", unsafe_allow_html=True)
 
@@ -279,41 +312,14 @@ for label in ["Conservative", "Base Case", "Optimistic"]:
 
 # --- Export PDF Report ---
 st.markdown("<div class='section-header'><h2>Export Report</h2></div>", unsafe_allow_html=True)
-if st.button("Download PDF Report"):
-    buffer = BytesIO()
-    c = canvas.Canvas(buffer, pagesize=letter)
-    c.setFont("Helvetica", 12)
-    y = 750
-    c.drawString(50, y, "CRE Deal Analyzer Report")
-    y -= 30
-    c.drawString(50, y, f"Purchase Price: ${purchase_price:,.0f}")
-    c.drawString(50, y-20, f"Monthly Expenses: ${expenses:,.0f}")
-    c.drawString(50, y-40, f"Hold Period: {hold_period} years")
-    c.drawString(50, y-60, f"Loan Term: {loan_term} years")
-    y -= 100
-    
-    for label in ["Conservative", "Base Case", "Optimistic"]:
-        c.drawString(50, y, f"{label} Scenario")
-        y -= 20
-        cap_rate = results[label][3]  # Use cap_rate from results
-        cash_flow = results[label][1]  # Use cash_flow from results
-        coc_return = results[label][5]  # Use coc_return from results
-        irr = results[label][4]  # Use irr from results
-        c.drawString(50, y, f"Cap Rate: {format_percent(cap_rate)}")
-        c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(cash_flow)}")
-        c.drawString(50, y-40, f"CoC Return: {format_percent(coc_return)}")
-        c.drawString(50, y-60, f"IRR: {format_percent(irr)}")
-        y -= 100
-    
-    c.showPage()
-    c.save()
-    buffer.seek(0)
-    st.download_button(
-        label="Download PDF",
-        data=buffer,
-        file_name="cre_deal_report.pdf",
-        mime="application/pdf"
-    )
+pdf_data = generate_pdf_report(purchase_price, expenses, hold_period, loan_term, results)
+st.download_button(
+    label="Download PDF Report",
+    data=pdf_data,
+    file_name="cre_deal_report.pdf",
+    mime="application/pdf",
+    key="download_pdf_report"
+)
 
 # --- Sensitivity Analysis ---
 st.markdown("<div class='section-header'><h2>Sensitivity Analysis</h2></div>", unsafe_allow_html=True)
@@ -352,14 +358,14 @@ for col, (label, color) in zip(donut_cols, zip(["Conservative", "Base Case", "Op
         fig = go.Figure(data=[go.Pie(
             labels=labels,
             values=values,
-            hole=0.85,  # Thinner donut
+            hole=0.85,
             marker=dict(colors=[legend_colors[lbl] for lbl in labels]),
             textinfo='label+percent',
             textposition='outside',
             hovertemplate="%{label}: %{value:$,.0f}<extra></extra>"
         )])
         fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0))
-        st.plotly_chart(fig, use_container_width=False, width=300, height=300)  # Smaller charts
+        st.plotly_chart(fig, use_container_width=False, width=300, height=300)
 
 legend_html = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{legend_colors[k]}; font-weight:bold;'>■ {k}</span>" for k in labels]) + "</div>"
 st.markdown(legend_html, unsafe_allow_html=True)
@@ -381,7 +387,7 @@ for col, label in zip(time_cols, ["Conservative", "Base Case", "Optimistic"]):
         xaxis_title="Year",
         yaxis_title="Amount ($)",
         hoverlabel=dict(namelength=-1, bgcolor="white", font_size=13),
-        showlegend=False  # Disable legend
+        showlegend=False
     )
     fig.update_traces(hovertemplate='%{y:$,.0f}')
     col.plotly_chart(fig, use_container_width=True)
