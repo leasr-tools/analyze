@@ -1,20 +1,17 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from plotly.subplots import make_subplots
 import numpy_financial as npf
 import pdfplumber
 from pdf2image import convert_from_bytes
 import pytesseract
 import re
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-# --- Streamlit Config ---
-st.set_page_config(layout="wide", page_title="CRE Deal Analyzer")
-st.title("CRE Deal Analyzer")
-
-# --- PDF Extraction Functions ---
+# ------------------ PDF FUNCTIONS ------------------
 def extract_pdf_text(file):
-    """Extract all text from PDF pages or fallback to OCR."""
+    """Extract text from PDF or fallback to OCR."""
     try:
         with pdfplumber.open(file) as pdf:
             text = "".join(page.extract_text() or "" for page in pdf.pages)
@@ -27,142 +24,222 @@ def extract_pdf_text(file):
         return str(e)
 
 def parse_summary_data(text):
-    """Extract key summary values like rent, CAM, taxes, square footage."""
-    data = {"address": "", "property_type": "Office", "square_feet": 10000,
-            "rent_psf": 28.0, "cam_psf": 5.0, "taxes_psf": 2.0}
-    rent_match = re.search(r"\$\s*(\d+\.?\d*)\s*(?:/sqft|/sf|/yr|psf)", text, re.IGNORECASE)
+    """Parse key values from PDF text."""
+    data = {
+        "rent_psf": 28.0,
+        "cam_psf": 5.0,
+        "taxes_psf": 2.0,
+        "square_feet": 10000
+    }
+    rent_match = re.search(r"\$\s*(\d+\.?\d*)\s*(?:/sqft|/sf|psf|/yr)", text, re.IGNORECASE)
     if rent_match:
         data["rent_psf"] = float(rent_match.group(1))
-    address_match = re.search(r"(\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})", text, re.IGNORECASE)
-    if address_match:
-        data["address"] = address_match.group(1)
-    cam_match = re.search(r"(?:CAM|common\s+area\s+maintenance)\s*\$?\s*(\d+\.?\d*)", text, re.IGNORECASE)
+    cam_match = re.search(r"(?:CAM|common\s+area)\s*\$?\s*(\d+\.?\d*)", text, re.IGNORECASE)
     if cam_match:
         data["cam_psf"] = float(cam_match.group(1))
     tax_match = re.search(r"(?:Taxes|Property Taxes)\s*\$?\s*(\d+\.?\d*)", text, re.IGNORECASE)
     if tax_match:
         data["taxes_psf"] = float(tax_match.group(1))
+    sqft_match = re.search(r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:sqft|sf|square\s+feet)", text, re.IGNORECASE)
+    if sqft_match:
+        data["square_feet"] = int(sqft_match.group(1).replace(",", ""))
     return data
 
-def extract_comps_from_pdf(file):
-    """Attempt to extract comps table from PDF using pdfplumber."""
-    comps = []
-    try:
-        with pdfplumber.open(file) as pdf:
-            for page in pdf.pages:
-                tables = page.extract_tables()
-                for table in tables:
-                    for row in table:
-                        if len(row) >= 4 and re.search(r"\d", row[1]):
-                            try:
-                                comps.append({
-                                    "address": row[0],
-                                    "rent_psf": float(re.sub(r"[^\d.]", "", row[1])),
-                                    "cam_psf": float(re.sub(r"[^\d.]", "", row[2])),
-                                    "taxes_psf": float(re.sub(r"[^\d.]", "", row[3]))
-                                })
-                            except:
-                                continue
-        return pd.DataFrame(comps) if comps else None
-    except Exception as e:
-        st.warning(f"Failed to extract comps: {str(e)}")
-        return None
+# ------------------ FINANCIAL ENGINE ------------------
+def amortization_schedule(loan_amount, annual_rate, term_years, interest_only_years=0):
+    schedule = []
+    monthly_rate = annual_rate / 12
+    n_months = term_years * 12
+    balance = loan_amount
+    monthly_payment = 0 if interest_only_years > 0 else -npf.pmt(monthly_rate, n_months, loan_amount)
 
-# --- Financial Calculator ---
-def analyze_deal(purchase_price, rent_psf, square_feet, expenses, loan_amount,
-                 interest_rate, loan_term, cam_psf, taxes_psf):
-    rent = rent_psf * square_feet / 12
-    total_expenses = expenses + (cam_psf + taxes_psf) * square_feet / 12
-    noi = (rent - total_expenses) * 12
-    cap_rate = noi / purchase_price if purchase_price > 0 else 0
-    monthly_payment = -npf.pmt(interest_rate / 12, loan_term * 12, loan_amount) if loan_amount > 0 else 0
-    cash_flow = noi / 12 - monthly_payment
-    coc_return = (cash_flow * 12) / (purchase_price - loan_amount) if purchase_price > loan_amount else 0
-    irr = npf.irr([-purchase_price + loan_amount] + [cash_flow * 12] * loan_term)
-    return {"Cap Rate": cap_rate, "Cash Flow": cash_flow, "CoC Return": coc_return, "IRR": irr, "NOI": noi}
+    for month in range(1, n_months + 1):
+        if month <= interest_only_years * 12:
+            interest = balance * monthly_rate
+            principal = 0
+            payment = interest
+        else:
+            if month == interest_only_years * 12 + 1:
+                monthly_payment = -npf.pmt(monthly_rate, n_months - interest_only_years * 12, balance)
+            interest = balance * monthly_rate
+            principal = monthly_payment - interest
+            payment = monthly_payment
+            balance -= principal
 
-# --- Access Control ---
-access_code = st.text_input("Enter Access Code", type="password")
-if access_code != "crebeta25":
-    st.stop()
+        schedule.append({
+            "Month": month,
+            "Payment": payment,
+            "Principal": principal,
+            "Interest": interest,
+            "Balance": balance
+        })
+    return pd.DataFrame(schedule)
 
-# --- Step 1: Mode Selection ---
-mode = st.radio("How would you like to start?", ("Upload PDF (CoStar/Title)", "Manual Input"))
+def analyze_scenario(purchase_price, monthly_expenses, rent_psf, square_feet,
+                     downpayment_pct, interest_rate, appreciation_pct,
+                     hold_period, loan_term, interest_only_years, cam_psf, taxes_psf):
+    downpayment = purchase_price * (downpayment_pct / 100)
+    loan_amount = purchase_price - downpayment
 
-pdf_data = {"address": "", "property_type": "Office", "square_feet": 10000,
-            "rent_psf": 28.0, "cam_psf": 5.0, "taxes_psf": 2.0}
-comps_df = None
+    # Monthly rent & expenses
+    monthly_rent = (rent_psf + cam_psf + taxes_psf) * square_feet / 12
+    monthly_noi = monthly_rent - monthly_expenses
 
-if mode == "Upload PDF (CoStar/Title)":
-    uploaded_file = st.file_uploader("Upload PDF", type="pdf")
-    if uploaded_file:
-        with st.spinner("Extracting data from PDF..."):
-            text = extract_pdf_text(uploaded_file)
-            pdf_data = parse_summary_data(text)
-            comps_df = extract_comps_from_pdf(uploaded_file)
-        st.success("PDF data extracted!")
-        st.write(f"**Rent:** ${pdf_data['rent_psf']:.2f}/sqft")
-        if comps_df is not None:
-            st.write("**Extracted Comps:**")
-            st.dataframe(comps_df)
+    # Amortization
+    schedule = amortization_schedule(loan_amount, interest_rate / 100, loan_term, interest_only_years)
+    total_principal_paid = schedule[schedule["Month"] <= hold_period * 12]["Principal"].sum()
 
-# --- Step 2: Property Details ---
-st.markdown("### Property Details")
-col1, col2 = st.columns(2)
-with col1:
-    address = st.text_input("Property Address", value=pdf_data.get("address", ""))
-    property_type = st.selectbox("Property Type", ["Office", "Retail", "Industrial"], index=0)
-with col2:
-    square_feet = st.number_input("Square Footage", min_value=1000, value=pdf_data.get("square_feet", 10000))
+    # Cash Flow
+    total_interest_paid = schedule[schedule["Month"] <= hold_period * 12]["Interest"].sum()
+    cash_flow = monthly_noi * 12 * hold_period - total_interest_paid
 
-# --- Step 3: Financial Inputs ---
-st.markdown("### Financial Inputs")
-col3, col4 = st.columns(2)
-with col3:
-    purchase_price = st.number_input("Purchase Price ($)", value=1000000)
-    expenses = st.number_input("Monthly Expenses ($)", value=5000)
-    rent_psf = st.number_input("Base Rent ($/sqft/year)", value=pdf_data.get("rent_psf", 28.0))
-with col4:
-    loan_amount = st.number_input("Loan Amount ($)", value=800000)
-    interest_rate = st.number_input("Interest Rate (%)", value=5.0) / 100
-    loan_term = st.number_input("Loan Term (years)", value=20)
-    cam_psf = st.number_input("CAM ($/sqft/year)", value=pdf_data.get("cam_psf", 5.0))
-    taxes_psf = st.number_input("Taxes ($/sqft/year)", value=pdf_data.get("taxes_psf", 2.0))
+    # Property value in X years
+    future_value = purchase_price * (1 + appreciation_pct / 100) ** hold_period
+    equity_gain = future_value - loan_amount - downpayment
 
-# --- Step 4: Analysis ---
-if st.button("Analyze Deal"):
-    conservative_rent_psf = rent_psf * 0.9
-    base_rent_psf = rent_psf
-    optimistic_rent_psf = rent_psf * 1.1
+    # Cap rate, IRR, CoC
+    cap_rate = (monthly_noi * 12) / purchase_price
+    irr_cashflows = [-downpayment] + [monthly_noi * 12] * (hold_period - 1) + [monthly_noi * 12 + future_value]
+    irr = npf.irr(irr_cashflows)
+    coc_return = (monthly_noi * 12) / downpayment
 
-    scenarios = {
-        "Conservative": analyze_deal(purchase_price, conservative_rent_psf, square_feet, expenses, loan_amount, interest_rate, loan_term, cam_psf, taxes_psf),
-        "Base": analyze_deal(purchase_price, base_rent_psf, square_feet, expenses, loan_amount, interest_rate, loan_term, cam_psf, taxes_psf),
-        "Optimistic": analyze_deal(purchase_price, optimistic_rent_psf, square_feet, expenses, loan_amount, interest_rate, loan_term, cam_psf, taxes_psf)
+    return {
+        "Cap Rate": cap_rate,
+        "Cash Flow": cash_flow,
+        "CoC Return": coc_return,
+        "IRR": irr,
+        "Value": future_value,
+        "Equity Gain": equity_gain,
+        "Schedule": schedule
     }
 
-    # Scenario results
-    st.subheader("Scenario Analysis")
-    cols = st.columns(3)
-    for i, (name, result) in enumerate(scenarios.items()):
-        with cols[i]:
-            st.metric(f"{name} Cap Rate", f"{result['Cap Rate']:.2%}")
-            st.metric("Cash Flow", f"${result['Cash Flow']:,.0f}/month")
-            st.metric("NOI", f"${result['NOI']:,.0f}/year")
-            st.metric("IRR", f"{result['IRR']:.2%}")
+def analyze_multi_scenarios(general, scenarios):
+    results = {}
+    for scenario, params in scenarios.items():
+        results[scenario] = analyze_scenario(
+            general["purchase_price"],
+            general["monthly_expenses"],
+            params["rent"],
+            general["square_feet"],
+            params["downpayment"],
+            params["interest_rate"],
+            params["appreciation"],
+            general["hold_period"],
+            general["loan_term"],
+            general["interest_only_years"],
+            general["cam_psf"],
+            general["taxes_psf"]
+        )
+    return results
 
-    # Benchmark Comparison from Comps
-    if comps_df is not None:
-        st.subheader("Benchmark Comparison (From PDF Comps)")
-        avg_rent = comps_df["rent_psf"].mean()
-        avg_cam = comps_df["cam_psf"].mean()
-        avg_taxes = comps_df["taxes_psf"].mean()
-        comparison_data = [
-            {"Metric": "Rent ($/sqft)", "Your Deal": base_rent_psf, "Comps Avg": avg_rent,
-             "Status": "Over" if base_rent_psf > avg_rent else "Under" if base_rent_psf < avg_rent else "Aligned"},
-            {"Metric": "CAM ($/sqft)", "Your Deal": cam_psf, "Comps Avg": avg_cam,
-             "Status": "Over" if cam_psf > avg_cam else "Under" if cam_psf < avg_cam else "Aligned"},
-            {"Metric": "Taxes ($/sqft)", "Your Deal": taxes_psf, "Comps Avg": avg_taxes,
-             "Status": "Over" if taxes_psf > avg_taxes else "Under" if taxes_psf < avg_taxes else "Aligned"}
-        ]
-        st.dataframe(pd.DataFrame(comparison_data))
+# ------------------ UI ------------------
+st.title("CRE Deal Analyzer")
+
+# Step 1: Upload PDF
+uploaded_file = st.file_uploader("Upload CoStar/Title Report (Optional)", type="pdf")
+pdf_data = {"rent_psf": 28.0, "cam_psf": 5.0, "taxes_psf": 2.0, "square_feet": 10000}
+if uploaded_file:
+    with st.spinner("Extracting PDF data..."):
+        text = extract_pdf_text(uploaded_file)
+        pdf_data = parse_summary_data(text)
+    st.success("PDF data extracted!")
+
+# Step 2: General Parameters
+st.markdown("## Step 2: General Parameters")
+col_gen1, col_gen2, col_gen3 = st.columns(3)
+with col_gen1:
+    purchase_price = st.number_input("Purchase Price ($)", value=1000000)
+    monthly_expenses = st.number_input("Monthly Operating Expenses ($)", value=5000)
+with col_gen2:
+    hold_period = st.number_input("Hold Period (years)", min_value=1, max_value=30, value=5)
+    interest_only_years = st.number_input("Interest-Only Period (years)", min_value=0, max_value=10, value=2)
+with col_gen3:
+    loan_term = st.number_input("Loan Term (years)", min_value=1, max_value=30, value=20)
+
+# Step 3: Scenario Parameters
+st.markdown("## Step 3: Scenario Parameters")
+col_cons, col_base, col_opt = st.columns(3)
+with col_cons:
+    st.markdown("### Conservative")
+    cons_rent = st.number_input("Rent ($/sqft/year)", value=pdf_data['rent_psf'] * 0.9, key="cons_rent")
+    cons_down = st.number_input("Downpayment (%)", value=25.0, key="cons_down")
+    cons_int = st.number_input("Interest Rate (%)", value=5.5, key="cons_int")
+    cons_app = st.number_input("Appreciation (%)", value=2.0, key="cons_app")
+
+with col_base:
+    st.markdown("### Base")
+    base_rent = st.number_input("Rent ($/sqft/year)", value=pdf_data['rent_psf'], key="base_rent")
+    base_down = st.number_input("Downpayment (%)", value=20.0, key="base_down")
+    base_int = st.number_input("Interest Rate (%)", value=5.0, key="base_int")
+    base_app = st.number_input("Appreciation (%)", value=3.0, key="base_app")
+
+with col_opt:
+    st.markdown("### Optimistic")
+    opt_rent = st.number_input("Rent ($/sqft/year)", value=pdf_data['rent_psf'] * 1.1, key="opt_rent")
+    opt_down = st.number_input("Downpayment (%)", value=15.0, key="opt_down")
+    opt_int = st.number_input("Interest Rate (%)", value=4.5, key="opt_int")
+    opt_app = st.number_input("Appreciation (%)", value=4.0, key="opt_app")
+
+# Run Analysis
+if st.button("Analyze Deal"):
+    general = {
+        "purchase_price": purchase_price,
+        "monthly_expenses": monthly_expenses,
+        "hold_period": hold_period,
+        "interest_only_years": interest_only_years,
+        "loan_term": loan_term,
+        "square_feet": pdf_data['square_feet'],
+        "cam_psf": pdf_data['cam_psf'],
+        "taxes_psf": pdf_data['taxes_psf']
+    }
+    scenarios = {
+        "Conservative": {"rent": cons_rent, "downpayment": cons_down, "interest_rate": cons_int, "appreciation": cons_app},
+        "Base": {"rent": base_rent, "downpayment": base_down, "interest_rate": base_int, "appreciation": base_app},
+        "Optimistic": {"rent": opt_rent, "downpayment": opt_down, "interest_rate": opt_int, "appreciation": opt_app}
+    }
+    results = analyze_multi_scenarios(general, scenarios)
+
+    # Results Table
+    st.markdown("## Results")
+    metrics = []
+    for scenario, res in results.items():
+        metrics.append({
+            "Scenario": scenario,
+            "Cap Rate": f"{res['Cap Rate']:.2%}",
+            "Cash Flow (Hold)": f"${res['Cash Flow']:,.0f}",
+            "CoC Return": f"{res['CoC Return']:.2%}",
+            "IRR": f"{res['IRR']:.2%}",
+            "Value (x yrs)": f"${res['Value']:,.0f}",
+            "Equity Gain": f"${res['Equity Gain']:,.0f}"
+        })
+    st.dataframe(pd.DataFrame(metrics))
+
+    # Sensitivity Analysis (Rent +/-10%)
+    st.markdown("## Sensitivity Analysis (IRR vs Rent)")
+    sens = []
+    for adj in [-0.1, -0.05, 0, 0.05, 0.1]:
+        adj_rent = base_rent * (1 + adj)
+        test = analyze_scenario(purchase_price, monthly_expenses, adj_rent, pdf_data['square_feet'],
+                                base_down, base_int, base_app, hold_period, loan_term,
+                                interest_only_years, pdf_data['cam_psf'], pdf_data['taxes_psf'])
+        sens.append({"Rent Change": f"{adj*100:.0f}%", "IRR": f"{test['IRR']:.2%}"})
+    st.dataframe(pd.DataFrame(sens))
+
+    # Donut Chart Example
+    st.markdown("## Donut Chart (Base Scenario)")
+    base_schedule = results["Base"]["Schedule"]
+    total_interest = base_schedule["Interest"].sum()
+    total_principal = base_schedule["Principal"].sum()
+    total_cash_flow = results["Base"]["Cash Flow"]
+    fig = go.Figure(data=[go.Pie(labels=["Interest", "Principal", "Cash Flow"],
+                                 values=[total_interest, total_principal, total_cash_flow],
+                                 hole=.4)])
+    st.plotly_chart(fig)
+
+    # Time Series Chart Example
+    st.markdown("## Equity & Cash Flow Over Time (Base Scenario)")
+    time_series = base_schedule.copy()
+    time_series["Equity"] = purchase_price - time_series["Balance"]
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=time_series["Month"], y=time_series["Equity"], mode='lines', name='Equity'))
+    st.plotly_chart(fig2)
