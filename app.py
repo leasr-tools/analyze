@@ -19,18 +19,18 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 st.set_page_config(layout="wide", page_title="CRE Deal Analyzer")
 st.markdown("""
 <style>
-.stApp { background: linear-gradient(to bottom right, #1e3a8a, #1f2937); color: white; font-family: Inter; }
-h1, h2, h3 { color: #facc15; }
-.stButton>button { background-color: #facc15; color: #1e3a8a; border-radius: 8px; }
-.stTextInput>div>input { background-color: #374151; color: white; border-radius: 8px; }
-.stNumberInput>div>input { background-color: #374151; color: white; border-radius: 8px; }
-.stSelectbox>div>div>select { background-color: #374151; color: white; border-radius: 8px; }
+.stApp { background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb); color: #1f2937; font-family: Inter; }
+h1, h2, h3 { color: #b45309; }
+.stButton>button { background-color: #b45309; color: white; border-radius: 8px; }
+.stTextInput>div>input { background-color: #ffffff; color: #1f2937; border-radius: 8px; border: 1px solid #d1d5db; }
+.stNumberInput>div>input { background-color: #ffffff; color: #1f2937; border-radius: 8px; border: 1px solid #d1d5db; }
+.stSelectbox>div>div>select { background-color: #ffffff; color: #1f2937; border-radius: 8px; border: 1px solid #d1d5db; }
 </style>
 """, unsafe_allow_html=True)
 
 # Grok 3 comps function
 @st.cache_data
-def fetch_grok_comps(address, property_type="office"):
+def fetch_grok_comps(address, property_type="Office"):
     client = GrokClient(api_key=st.secrets["GROK_API_KEY"])
     prompt = f"""
     Search for recent {property_type} lease comps near {address}.
@@ -64,25 +64,30 @@ def extract_pdf_data(file):
     except Exception as e:
         return str(e)
 
-# Parse extracted text
+# Enhanced PDF parsing
 def parse_pdf_data(text):
-    data = {"address": "", "property_type": "office", "square_feet": 10000, "rent_psf": None}
-    # Regex for rent (e.g., "$25/sqft", "$25 per square foot")
-    rent_match = re.search(r"\$\s*(\d+\.?\d*)\s*(?:/sqft|/square\s+foot|psf)", text, re.IGNORECASE)
+    data = {"address": "", "property_type": "Office", "square_feet": 10000, "rent_psf": None}
+    # Enhanced regex for rent (handles $25, $25.00, $25 per SF/Yr, etc.)
+    rent_match = re.search(r"\$\s*(\d+\.?\d*)\s*(?:/sqft|/sf|/square\s+foot|/sf/yr|/yr|psf|per\s+sf(?:/yr)?)", text, re.IGNORECASE)
     if rent_match:
         data["rent_psf"] = float(rent_match.group(1))
-    # Basic parsing for other fields (extend as needed)
-    address_match = re.search(r"(\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})", text)
+    # Address (e.g., 123 Main St, City, ST 12345)
+    address_match = re.search(r"(\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})", text, re.IGNORECASE)
     if address_match:
         data["address"] = address_match.group(1)
-    sqft_match = re.search(r"(\d{1,3}(?:,\d{3})*)\s*(?:sqft|square\s+feet)", text, re.IGNORECASE)
+    # Square footage (e.g., 10,000 SF, 10000 square feet)
+    sqft_match = re.search(r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:sqft|sf|square\s+feet)", text, re.IGNORECASE)
     if sqft_match:
         data["square_feet"] = int(sqft_match.group(1).replace(",", ""))
+    # Property type (e.g., Office, Retail, Industrial)
+    type_match = re.search(r"\b(office|retail|industrial)\b", text, re.IGNORECASE)
+    if type_match:
+        data["property_type"] = type_match.group(1).capitalize()
     return data
 
-# Financial calculator (from original script)
+# Financial calculator
 def analyze_deal(purchase_price, rent_psf, square_feet, expenses, loan_amount, interest_rate, loan_term):
-    rent = rent_psf * square_feet / 12  # Monthly rent
+    rent = rent_psf * square_feet / 12
     noi = (rent - expenses) * 12
     cap_rate = noi / purchase_price
     monthly_payment = -npf.pmt(interest_rate / 12, loan_term * 12, loan_amount)
@@ -105,7 +110,7 @@ def analyze_deal(purchase_price, rent_psf, square_feet, expenses, loan_amount, i
         "Schedule": pd.DataFrame(schedule)
     }
 
-# Enhanced PDF report with charts
+# PDF report
 def generate_pdf_report(scenarios, comps, insights):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
@@ -113,7 +118,6 @@ def generate_pdf_report(scenarios, comps, insights):
     c.drawString(100, 750, "CRE Deal Analysis Report")
     y = 700
     c.setFont("Helvetica", 12)
-    # Scenarios
     for name, result in scenarios.items():
         c.drawString(100, y, f"{name} Scenario")
         y -= 20
@@ -121,17 +125,14 @@ def generate_pdf_report(scenarios, comps, insights):
         c.drawString(120, y-20, f"Cash Flow: ${result['Cash Flow']:,.0f}/month")
         c.drawString(120, y-40, f"IRR: {result['IRR']:.2%}")
         y -= 60
-    # Comps
     if comps is not None:
         c.drawString(100, y, "Lease Comps")
         y -= 20
         for _, row in comps.iterrows():
             c.drawString(120, y, f"{row['address']}: ${row['rent_psf']:.2f}/sqft, {row['lease_term']} months")
             y -= 20
-    # Insights
     c.drawString(100, y, "AI Insights")
     c.drawString(120, y-20, insights)
-    # Bar chart (simplified)
     d = Drawing(200, 100)
     bc = VerticalBarChart()
     bc.data = [[scenarios[s]["Cap Rate"] * 100 for s in ["Conservative", "Base", "Optimistic"]]]
@@ -144,7 +145,7 @@ def generate_pdf_report(scenarios, comps, insights):
 
 # Main app
 st.title("CRE Deal Analyzer")
-st.markdown("A premium tool for CRE deal analysis ($40–$75/month). Upload a report or enter details to get started.")
+st.markdown("A premium tool for CRE deal analysis ($40–$75/month). Upload a report or enter details.")
 
 # Access code
 access_code = st.text_input("Enter Access Code", type="password")
@@ -163,14 +164,21 @@ if uploaded_file:
         if pdf_data.get("rent_psf"):
             st.write(f"Extracted Rent: ${pdf_data['rent_psf']:.2f}/sqft")
         else:
-            st.warning("No rent data found in PDF")
+            st.warning("No rent data found in PDF. Using AI comps or manual input.")
 
 # Property inputs
 st.markdown("### Property Details")
 col1, col2 = st.columns(2)
 with col1:
     address = st.text_input("Property Address", value=pdf_data.get("address", ""))
-    property_type = st.selectbox("Property Type", ["Office", "Retail", "Industrial"], index=["Office", "Retail", "Industrial"].index(pdf_data.get("property_type", "office")))
+    property_type_options = ["Office", "Retail", "Industrial"]
+    default_index = 0
+    if pdf_data.get("property_type"):
+        try:
+            default_index = property_type_options.index(pdf_data["property_type"])
+        except ValueError:
+            pass
+    property_type = st.selectbox("Property Type", property_type_options, index=default_index)
 with col2:
     square_feet = st.number_input("Square Footage", min_value=1000, value=pdf_data.get("square_feet", 10000))
     use_ai_comps = st.checkbox("Use AI Lease Comps", value=True)
@@ -186,7 +194,7 @@ with col4:
     interest_rate = st.number_input("Interest Rate (%)", value=5.0) / 100
     loan_term = st.number_input("Loan Term (years)", value=20)
 
-# Fetch comps
+# Analyze deal
 if st.button("Analyze Deal"):
     with st.spinner("Fetching lease comps..."):
         comps, insights, warnings = fetch_grok_comps(address, property_type) if use_ai_comps else (None, "", "")
@@ -196,7 +204,6 @@ if st.button("Analyze Deal"):
             st.markdown(f"**AI Insights**: {insights}")
             if warnings:
                 st.warning(warnings)
-            # Use PDF rent if available, else Grok comps
             conservative_rent_psf = pdf_data.get("rent_psf", comps["rent_psf"].quantile(0.25))
             base_rent_psf = pdf_data.get("rent_psf", comps["rent_psf"].median())
             optimistic_rent_psf = pdf_data.get("rent_psf", comps["rent_psf"].quantile(0.75))
@@ -264,401 +271,3 @@ with st.form("user_comps"):
         if client.generate(prompt).get("is_valid"):
             pd.DataFrame([{"address": comp_address, "rent_psf": rent_psf, "lease_term": lease_term, "concessions": concessions}]).to_csv("user_comps.csv", mode="a", index=False)
             st.success("Comp added!")
-
-#---DONT ERASE
-# # MVP: CRE Deal Analyzer App (Backend with Streamlit + Snowflake + Auth0)
-
-# import streamlit as st
-# import pandas as pd
-# import numpy as np
-# import plotly.express as px
-# import plotly.graph_objects as go
-# import numpy_financial as npf
-# from reportlab.lib.pagesizes import letter
-# from reportlab.pdfgen import canvas
-# from io import BytesIO
-
-# # --- Page Config for Full Width
-# st.set_page_config(layout="wide")
-
-# # --- Access Code Protection
-# st.sidebar.info("Private beta – please do not share your access code.")
-
-# # Initialize session state for access code
-# if 'access_granted' not in st.session_state:
-#     st.session_state.access_granted = False
-
-# # Access code input and button
-# access_code = st.sidebar.text_input("Enter Access Code", type="password", key="access_code")
-# if st.sidebar.button("Enter"):
-#     if access_code == "crebeta25":
-#         st.session_state.access_granted = True
-#         st.sidebar.success("Access granted!")
-#     else:
-#         st.session_state.access_granted = False
-#         st.sidebar.error("Incorrect access code. Please try again.")
-
-# # Stop the app if access is not granted
-# if not st.session_state.access_granted:
-#     st.warning("Please enter the correct access code and click 'Enter' to view the app.")
-#     st.stop()
-
-# # --- Global Styling
-# st.markdown("""
-#     <style>
-#     body, div, input, select, textarea, span, label, h1, h2, h3, h4, h5, h6, p {
-#         font-family: Helvetica, Arial, sans-serif !important;
-#     }
-#     .section-header {
-#         padding: 1rem 0;
-#         border-bottom: 1px solid #eee;
-#     }
-#     .scenario-box {
-#         border: 1px solid #ddd;
-#         border-radius: 10px;
-#         padding: 1rem;
-#         background: #fafafa;
-#         margin-bottom: 1rem;
-#     }
-#     .conservative-header {
-#         color: #7b68ee;
-#     }
-#     .basecase-header {
-#         color: #3cb371;
-#     }
-#     .optimistic-header {
-#         color: #ff8c00;
-#     }
-#     .input-container {
-#         background: #f0f2f6;
-#         padding: 1rem;
-#         border-radius: 0.5rem;
-#         margin-bottom: 1rem;
-#     }
-#     .metric-block {
-#         background: #ffffff;
-#         padding: 0.75rem 1rem;
-#         border-radius: 0.5rem;
-#         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-#         margin-bottom: 0.5rem;
-#     }
-#     .metric-block b {
-#         font-weight: bold;
-#         font-size: 1.1rem;
-#     }
-#     .styled-section {
-#         border: 1px solid #e0e0e0;
-#         border-radius: 10px;
-#         padding: 1.5rem;
-#         margin-bottom: 2rem;
-#         background-color: #ffffff;
-#         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-#     }
-#     .styled-subsection {
-#         margin-top: 1rem;
-#         margin-bottom: 2rem;
-#     }
-#     .subsection-label {
-#         font-weight: bold;
-#         font-size: 1.2rem;
-#         margin-bottom: 0.5rem;
-#         color: #333333;
-#     }
-#     .styled-table-section {
-#         margin-top: 2rem;
-#         padding: 1rem 1.5rem;
-#         border: 1px solid #ccc;
-#         border-radius: 8px;
-#         background-color: #f9f9f9;
-#     }
-#     .chart-section-title {
-#         font-weight: bold;
-#         font-size: 1.4rem;
-#         margin: 1rem 0 0.5rem;
-#     }
-#     </style>
-# """, unsafe_allow_html=True)
-
-# # --- Auth0 Placeholder
-# st.sidebar.title("Login")
-# st.sidebar.success("Logged in as demo.user@example.com")
-# st.sidebar.info("Private beta – please do not share your access code.")
-
-# # --- Page Title
-# st.markdown("""
-# <div class="section-header">
-# <h1 style="font-family: Helvetica, Arial, sans-serif">Leasr Analyze: Commercial Real Estate Deal Analyzer</h1>
-# <p style="font-family: Helvetica, Arial, sans-serif">Quickly evaluate your deal's performance with side-by-side scenarios.</p>
-# </div>
-# """, unsafe_allow_html=True)
-
-# # Format functions
-# def format_dollar(val):
-#     return f"${val:,.0f}"
-
-# def format_percent(val):
-#     return f"{val:.1f}%"
-
-# def format_tooltip(val):
-#     return f"${val/1000:,.0f}k"
-
-# # Function to perform deal analysis
-# def analyze_deal(purchase_price, rent_income, expenses, down_payment_pct, loan_interest, loan_term, appreciation_rate, hold_period, io_years):
-#     down_payment = purchase_price * (down_payment_pct / 100)
-#     loan_amount = purchase_price - down_payment
-#     monthly_rate = loan_interest / 100 / 12
-#     num_payments = loan_term * 12
-
-#     pni_monthly = loan_amount * (monthly_rate * (1 + monthly_rate)**num_payments) / ((1 + monthly_rate)**num_payments - 1)
-
-#     noi = (rent_income - expenses) * 12
-#     cap_rate = (noi / purchase_price) * 100
-
-#     cash_flows = [-down_payment]
-#     balance = loan_amount
-#     schedule = []
-
-#     for year in range(1, hold_period + 1):
-#         interest_paid = 0
-#         principal_paid = 0
-#         for month in range(12):
-#             if year <= io_years:
-#                 interest = balance * monthly_rate
-#                 payment = interest
-#                 principal = 0
-#             else:
-#                 interest = balance * monthly_rate
-#                 payment = pni_monthly
-#                 principal = payment - interest
-#                 balance -= principal
-#             interest_paid += interest
-#             principal_paid += principal
-#         year_debt = interest_paid + principal_paid
-#         cash_flow = noi - year_debt
-#         property_value = purchase_price * ((1 + appreciation_rate / 100) ** year)
-#         equity = property_value - balance
-#         total_profit = equity + cash_flow * year - down_payment
-#         dcr = noi / year_debt if year_debt != 0 else np.nan
-#         roi = total_profit / down_payment * 100
-
-#         schedule.append({
-#             "Year": year,
-#             "Property Value": property_value,
-#             "Remaining Balance": balance,
-#             "Equity": equity,
-#             "NOI": noi,
-#             "Cash Flow": cash_flow,
-#             "Interest Paid": interest_paid,
-#             "Principal Paid": principal_paid,
-#             "Profit": total_profit,
-#             "ROI": roi,
-#             "DCR": dcr
-#         })
-#         cash_flows.append(cash_flow)
-
-#     irr = npf.irr(cash_flows)
-#     amort_df = pd.DataFrame(schedule)
-#     return cash_flow, (cash_flow * hold_period) / down_payment * 100, property_value, equity, cap_rate, irr * 100, amort_df
-
-# # --- Cached PDF Generation Function
-# @st.cache_data
-# def generate_pdf_report(purchase_price, expenses, hold_period, loan_term, results):
-#     buffer = BytesIO()
-#     c = canvas.Canvas(buffer, pagesize=letter)
-#     c.setFont("Helvetica", 12)
-#     y = 750
-#     c.drawString(50, y, "CRE Deal Analyzer Report")
-#     y -= 30
-#     c.drawString(50, y, f"Purchase Price: {format_dollar(purchase_price)}")
-#     c.drawString(50, y-20, f"Monthly Expenses: {format_dollar(expenses)}")
-#     c.drawString(50, y-40, f"Hold Period: {hold_period} years")
-#     c.drawString(50, y-60, f"Loan Term: {loan_term} years")
-#     y -= 100
-    
-#     for label in ["Conservative", "Base Case", "Optimistic"]:
-#         c.drawString(50, y, f"{label} Scenario")
-#         y -= 20
-#         cap_rate = results[label][3]
-#         cash_flow = results[label][1]
-#         coc_return = results[label][5]
-#         irr = results[label][4]
-#         c.drawString(50, y, f"Cap Rate: {format_percent(cap_rate)}")
-#         c.drawString(50, y-20, f"Cash Flow (Year {hold_period}): {format_dollar(cash_flow)}")
-#         c.drawString(50, y-40, f"CoC Return: {format_percent(coc_return)}")
-#         c.drawString(50, y-60, f"IRR: {format_percent(irr)}")
-#         y -= 100
-    
-#     c.showPage()
-#     c.save()
-#     buffer.seek(0)
-#     return buffer.getvalue()
-
-# # --- Input Section
-# st.markdown("<div class='section-header'><h2>Inputs</h2></div>", unsafe_allow_html=True)
-
-# # General Inputs
-# st.markdown("<div class='styled-section'><h3>General Deal Parameters</h3>", unsafe_allow_html=True)
-# purchase_price = st.number_input("Purchase Price ($)", min_value=10000, value=1000000, step=10000, key="purchase_price")
-# expenses = st.number_input("Monthly Operating Expenses ($)", min_value=0, value=4000, step=500, key="expenses")
-# hold_period = st.slider("Hold Period (years)", 1, 30, 10, key="hold_period")
-# io_years = st.slider("Interest-Only Period (years)", 0, 10, 0, key="io_years")
-# loan_term = st.slider("Loan Term (years)", 5, 30, 30, key="loan_term")
-# st.markdown("</div>", unsafe_allow_html=True)
-
-# # Scenario-Specific Inputs
-# scenarios = [
-#     ("Conservative", 9000, 30, 5.5, 2.0, "cons"),
-#     ("Base Case", 10000, 25, 5.0, 3.0, "base"),
-#     ("Optimistic", 11000, 20, 4.5, 4.0, "opt")
-# ]
-
-# col1, col2, col3 = st.columns(3)
-# results = {}
-
-# for col, (label, rent_income, dp_pct, rate, app_rate, key_prefix) in zip([col1, col2, col3], scenarios):
-#     with col:
-#         color_class = "conservative-header" if label == "Conservative" else "basecase-header" if label == "Base Case" else "optimistic-header"
-#         st.markdown(f"<div class='styled-section styled-subsection'><h3 class='{color_class}'>{label}</h3>", unsafe_allow_html=True)
-#         rent_income = st.number_input(f"Rent - {label}", value=rent_income, step=500, key=f"{key_prefix}_rent")
-#         down_payment_pct = st.slider("Down %", 0, 100, dp_pct, key=f"{key_prefix}_down")
-#         loan_interest = st.number_input("Rate %", value=rate, key=f"{key_prefix}_rate")
-#         appreciation_rate = st.slider("Appreciation %", 0.0, 10.0, app_rate, key=f"{key_prefix}_appreciation")
-
-#         cash_flow, coc_return, future_value, equity_gain, cap_rate, irr, amort_df = analyze_deal(
-#             purchase_price, rent_income, expenses, down_payment_pct, loan_interest, loan_term, appreciation_rate, hold_period, io_years)
-
-#         # Metrics with bold headers and tooltips
-#         st.markdown(f"""
-#             <div class='metric-block' title='Cap Rate: Net Operating Income divided by Purchase Price, indicating the annual return.'>
-#                 <b>Cap Rate</b>: {format_percent(cap_rate)}
-#             </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown(f"""
-#             <div class='metric-block' title='Cash Flow: Annual net income after expenses and debt service in the final year.'>
-#                 <b>Cash Flow in Year {hold_period}</b>: {format_dollar(cash_flow)}
-#             </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown(f"""
-#             <div class='metric-block' title='Cash-on-Cash Return: Annual cash flow relative to the down payment, expressed as a percentage.'>
-#                 <b>CoC Return</b>: {format_percent(coc_return)}
-#             </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown(f"""
-#             <div class='metric-block' title='IRR: Internal Rate of Return, the annualized return accounting for all cash flows over the hold period.'>
-#                 <b>IRR ({hold_period} yrs)</b>: {format_percent(irr)}
-#             </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown(f"""
-#             <div class='metric-block' title='Value: Projected property value at the end of the hold period based on appreciation.'>
-#                 <b>Value in {hold_period} yrs</b>: {format_dollar(future_value)}
-#             </div>
-#         """, unsafe_allow_html=True)
-#         st.markdown(f"""
-#             <div class='metric-block' title='Equity Gain: Increase in property value minus remaining loan balance.'>
-#                 <b>Equity Gain</b>: {format_dollar(equity_gain)}
-#             </div>
-#         """, unsafe_allow_html=True)
-
-#         amort_df_formatted = amort_df.copy()
-#         dollar_cols = ["Property Value", "Remaining Balance", "Equity", "NOI", "Cash Flow", "Interest Paid", "Principal Paid", "Profit"]
-#         percent_cols = ["ROI"]
-
-#         for col_ in dollar_cols:
-#             amort_df_formatted[col_] = amort_df_formatted[col_].apply(lambda x: f"${x:,.0f}")
-#         for col_ in percent_cols:
-#             amort_df_formatted[col_] = amort_df_formatted[col_].apply(lambda x: f"{x:.1f}%")
-#         amort_df_formatted["DCR"] = amort_df_formatted["DCR"].apply(lambda x: f"{x:.2f}" if not pd.isna(x) else "")
-
-#         results[label] = (amort_df_formatted, cash_flow, amort_df, cap_rate, irr, coc_return)
-#         st.markdown("</div>", unsafe_allow_html=True)
-
-# # --- Amortization Tables ---
-# st.markdown("<div class='section-header'><h2>Amortization Schedule</h2></div>", unsafe_allow_html=True)
-# for label in ["Conservative", "Base Case", "Optimistic"]:
-#     st.markdown(f"### {label}")
-#     st.dataframe(results[label][0], use_container_width=True)
-
-# # --- Export PDF Report ---
-# st.markdown("<div class='section-header'><h2>Export Report</h2></div>", unsafe_allow_html=True)
-# pdf_data = generate_pdf_report(purchase_price, expenses, hold_period, loan_term, results)
-# st.download_button(
-#     label="Download PDF Report",
-#     data=pdf_data,
-#     file_name="cre_deal_report.pdf",
-#     mime="application/pdf",
-#     key="download_pdf_report"
-# )
-
-# # --- Sensitivity Analysis ---
-# st.markdown("<div class='section-header'><h2>Sensitivity Analysis</h2></div>", unsafe_allow_html=True)
-# st.write("Impact of Rental Income (±10%) on IRR")
-# sensitivity_data = []
-
-# for label, rent_income, dp_pct, rate, app_rate, _ in scenarios:
-#     rent_low = rent_income * 0.9
-#     rent_high = rent_income * 1.1
-#     _, _, _, _, _, irr_low, _ = analyze_deal(purchase_price, rent_low, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
-#     _, _, _, _, _, irr_base, _ = analyze_deal(purchase_price, rent_income, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
-#     _, _, _, _, _, irr_high, _ = analyze_deal(purchase_price, rent_high, expenses, dp_pct, rate, loan_term, app_rate, hold_period, io_years)
-#     sensitivity_data.append({
-#         "Scenario": label,
-#         "Rent (-10%)": f"{format_percent(irr_low)}",
-#         "Base Rent": f"{format_percent(irr_base)}",
-#         "Rent (+10%)": f"{format_percent(irr_high)}"
-#     })
-
-# sensitivity_df = pd.DataFrame(sensitivity_data)
-# st.dataframe(sensitivity_df, use_container_width=True)
-
-# # --- Donut Charts ---
-# st.markdown("<div class='section-header'><h2>Ratios</h2></div>", unsafe_allow_html=True)
-# donut_cols = st.columns(3)
-# colors = ["#7b68ee", "#3cb371", "#ff8c00"]
-# labels = ["Interest", "Principal", "Cash Flow"]
-# legend_colors = {"Interest": "#7b68ee", "Principal": "#3cb371", "Cash Flow": "#ff8c00"}
-
-# for col, (label, color) in zip(donut_cols, zip(["Conservative", "Base Case", "Optimistic"], colors)):
-#     with col:
-#         st.markdown(f"<div class='chart-section-title'>{label}</div>", unsafe_allow_html=True)
-#         df = results[label][2]
-#         latest = df.iloc[-1]
-#         values = [latest["Interest Paid"], latest["Principal Paid"], latest["Cash Flow"]]
-#         fig = go.Figure(data=[go.Pie(
-#             labels=labels,
-#             values=values,
-#             hole=0.85,
-#             marker=dict(colors=[legend_colors[lbl] for lbl in labels]),
-#             textinfo='label+percent',
-#             textposition='outside',
-#             hovertemplate="%{label}: %{value:$,.0f}<extra></extra>"
-#         )])
-#         fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0))
-#         st.plotly_chart(fig, use_container_width=False, width=300, height=300)
-
-# legend_html = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{legend_colors[k]}; font-weight:bold;'>■ {k}</span>" for k in labels]) + "</div>"
-# st.markdown(legend_html, unsafe_allow_html=True)
-
-# # --- Time Series ---
-# st.markdown("<div class='section-header'><h2>Time Series</h2></div>", unsafe_allow_html=True)
-# time_cols = st.columns(3)
-# trend_labels = ["Equity", "Cash Flow", "Profit"]
-# trend_colors = ["#7b68ee", "#3cb371", "#ff8c00"]
-
-# for col, label in zip(time_cols, ["Conservative", "Base Case", "Optimistic"]):
-#     df = results[label][2]
-#     fig = go.Figure()
-#     for name, color in zip(trend_labels, trend_colors):
-#         fig.add_trace(go.Scatter(x=df["Year"], y=df[name], mode='lines+markers', name=name, line=dict(color=color)))
-#     fig.update_layout(
-#         title=label,
-#         margin=dict(t=30, b=30, l=10, r=10),
-#         xaxis_title="Year",
-#         yaxis_title="Amount ($)",
-#         hoverlabel=dict(namelength=-1, bgcolor="white", font_size=13),
-#         showlegend=False
-#     )
-#     fig.update_traces(hovertemplate='%{y:$,.0f}')
-#     col.plotly_chart(fig, use_container_width=True)
-
-# legend_html2 = "<div style='text-align:center; margin-top: -20px;'>" + " ".join([f"<span style='color:{c}; font-weight:bold;'>■ {l}</span>" for l, c in zip(trend_labels, trend_colors)]) + "</div>"
-# st.markdown(legend_html2, unsafe_allow_html=True)
