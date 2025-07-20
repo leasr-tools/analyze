@@ -78,39 +78,50 @@ def amortization_schedule(loan_amount, annual_rate, term_years, interest_only_ye
 def analyze_scenario(purchase_price, monthly_expenses, rent_psf, square_feet,
                      downpayment_pct, interest_rate, appreciation_pct,
                      hold_period, loan_term, interest_only_years, cam_psf, taxes_psf):
+    """
+    Analyzes a single scenario of a CRE deal with corrected cap rate, CoC return, and IRR.
+    """
+    # 1. Loan & Downpayment
     downpayment = purchase_price * (downpayment_pct / 100)
     loan_amount = purchase_price - downpayment
 
-    # Monthly rent & expenses
-    monthly_rent = (rent_psf + cam_psf + taxes_psf) * square_feet / 12
-    monthly_noi = monthly_rent - monthly_expenses
+    # 2. Income & Expenses
+    monthly_rent = (rent_psf * square_feet) / 12
+    annual_rent = monthly_rent * 12
+    annual_expenses = (monthly_expenses * 12) + (cam_psf * square_feet) + (taxes_psf * square_feet)
+    noi = annual_rent - annual_expenses
 
-    # Amortization
+    # 3. Cap Rate
+    cap_rate = noi / purchase_price if purchase_price > 0 else 0
+
+    # 4. Loan Amortization
     schedule = amortization_schedule(loan_amount, interest_rate / 100, loan_term, interest_only_years)
-    total_principal_paid = schedule[schedule["Month"] <= hold_period * 12]["Principal"].sum()
+    interest_paid = schedule[schedule["Month"] <= hold_period * 12]["Interest"].sum()
+    principal_paid = schedule[schedule["Month"] <= hold_period * 12]["Principal"].sum()
 
-    # Cash Flow
-    total_interest_paid = schedule[schedule["Month"] <= hold_period * 12]["Interest"].sum()
-    cash_flow = monthly_noi * 12 * hold_period - total_interest_paid
+    # 5. Cash Flow
+    annual_debt_service = (interest_paid + principal_paid) / hold_period
+    annual_cash_flow = noi - annual_debt_service
+    total_cash_flow = annual_cash_flow * hold_period
 
-    # Property value in X years
+    # 6. Property Value & Equity
     future_value = purchase_price * (1 + appreciation_pct / 100) ** hold_period
-    equity_gain = future_value - loan_amount - downpayment
+    equity_gain = future_value - (loan_amount - principal_paid) - downpayment
 
-    # Cap rate, IRR, CoC
-    cap_rate = (monthly_noi * 12) / purchase_price
-    irr_cashflows = [-downpayment] + [monthly_noi * 12] * (hold_period - 1) + [monthly_noi * 12 + future_value]
+    # 7. Returns
+    coc_return = annual_cash_flow / downpayment if downpayment > 0 else 0
+    irr_cashflows = [-downpayment] + [annual_cash_flow] * (hold_period - 1) + [annual_cash_flow + (future_value - (loan_amount - principal_paid))]
     irr = npf.irr(irr_cashflows)
-    coc_return = (monthly_noi * 12) / downpayment
 
     return {
         "Cap Rate": cap_rate,
-        "Cash Flow": cash_flow,
+        "Cash Flow": total_cash_flow,
         "CoC Return": coc_return,
         "IRR": irr,
         "Value": future_value,
         "Equity Gain": equity_gain,
-        "Schedule": schedule
+        "Schedule": schedule,
+        "NOI": noi
     }
 
 def analyze_multi_scenarios(general, scenarios):
@@ -131,6 +142,40 @@ def analyze_multi_scenarios(general, scenarios):
             general["taxes_psf"]
         )
     return results
+
+def sensitivity_analysis(general, base_params):
+    results = []
+    for adj in [-0.10, -0.05, 0, 0.05, 0.10]:
+        adj_rent = base_params["rent"] * (1 + adj)
+        scenario = analyze_scenario(
+            general["purchase_price"],
+            general["monthly_expenses"],
+            adj_rent,
+            general["square_feet"],
+            base_params["downpayment"],
+            base_params["interest_rate"],
+            base_params["appreciation"],
+            general["hold_period"],
+            general["loan_term"],
+            general["interest_only_years"],
+            general["cam_psf"],
+            general["taxes_psf"]
+        )
+        results.append({
+            "Rent Change": f"{adj * 100:.0f}%",
+            "IRR": f"{scenario['IRR']:.2%}",
+            "Cap Rate": f"{scenario['Cap Rate']:.2%}",
+            "CoC Return": f"{scenario['CoC Return']:.2%}"
+        })
+    return pd.DataFrame(results)
+
+def build_time_series(schedule, purchase_price, monthly_noi):
+    df = schedule.copy()
+    df["Equity"] = purchase_price - df["Balance"]
+    df["Monthly Cash Flow"] = monthly_noi - (df["Principal"] + df["Interest"])
+    df["Cumulative Cash Flow"] = df["Monthly Cash Flow"].cumsum()
+    df["Profit"] = df["Equity"] + df["Cumulative Cash Flow"]
+    return df
 
 # ------------------ UI ------------------
 st.title("CRE Deal Analyzer")
@@ -214,32 +259,31 @@ if st.button("Analyze Deal"):
         })
     st.dataframe(pd.DataFrame(metrics))
 
-    # Sensitivity Analysis (Rent +/-10%)
+    # Sensitivity Analysis
     st.markdown("## Sensitivity Analysis (IRR vs Rent)")
-    sens = []
-    for adj in [-0.1, -0.05, 0, 0.05, 0.1]:
-        adj_rent = base_rent * (1 + adj)
-        test = analyze_scenario(purchase_price, monthly_expenses, adj_rent, pdf_data['square_feet'],
-                                base_down, base_int, base_app, hold_period, loan_term,
-                                interest_only_years, pdf_data['cam_psf'], pdf_data['taxes_psf'])
-        sens.append({"Rent Change": f"{adj*100:.0f}%", "IRR": f"{test['IRR']:.2%}"})
-    st.dataframe(pd.DataFrame(sens))
+    sens_df = sensitivity_analysis(general, scenarios["Base"])
+    st.dataframe(sens_df)
 
-    # Donut Chart Example
+    # Donut Chart
     st.markdown("## Donut Chart (Base Scenario)")
     base_schedule = results["Base"]["Schedule"]
     total_interest = base_schedule["Interest"].sum()
     total_principal = base_schedule["Principal"].sum()
     total_cash_flow = results["Base"]["Cash Flow"]
-    fig = go.Figure(data=[go.Pie(labels=["Interest", "Principal", "Cash Flow"],
+    fig = go.Figure(data=[go.Pie(labels=["Interest", "Principal", "Cumulative Cash Flow"],
                                  values=[total_interest, total_principal, total_cash_flow],
                                  hole=.4)])
     st.plotly_chart(fig)
 
-    # Time Series Chart Example
-    st.markdown("## Equity & Cash Flow Over Time (Base Scenario)")
-    time_series = base_schedule.copy()
-    time_series["Equity"] = purchase_price - time_series["Balance"]
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=time_series["Month"], y=time_series["Equity"], mode='lines', name='Equity'))
-    st.plotly_chart(fig2)
+    # Time Series Chart
+    st.markdown("## Equity, Cumulative Cash Flow, and Profit Over Time (Base Scenario)")
+    base_noi_monthly = (base_rent * pdf_data['square_feet']) / 12 - (
+        monthly_expenses + pdf_data['cam_psf'] * pdf_data['square_feet'] / 12 + pdf_data['taxes_psf'] * pdf_data['square_feet'] / 12)
+    time_df = build_time_series(base_schedule, purchase_price, base_noi_monthly)
+
+    fig3 = go.Figure()
+    fig3.add_trace(go.Scatter(x=time_df["Month"], y=time_df["Equity"], mode='lines', name='Equity'))
+    fig3.add_trace(go.Scatter(x=time_df["Month"], y=time_df["Cumulative Cash Flow"], mode='lines', name='Cumulative Cash Flow'))
+    fig3.add_trace(go.Scatter(x=time_df["Month"], y=time_df["Profit"], mode='lines', name='Total Profit'))
+
+    st.plotly_chart(fig3)
