@@ -9,6 +9,7 @@ import pdfplumber
 from pdf2image import convert_from_bytes
 import pytesseract
 import re
+import os
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -28,37 +29,39 @@ h1, h2, h3 { color: #b45309; }
 </style>
 """, unsafe_allow_html=True)
 
-# Grok 3 comps function
+# Grok 3 comps function with error handling
 @st.cache_data
 def fetch_grok_comps(address, property_type="Office"):
-    client = GrokClient(api_key=st.secrets["GROK_API_KEY"])
-    prompt = f"""
-    Search for recent {property_type} lease comps near {address}.
-    Extract: address, rent per square foot, lease term (months), concessions (e.g., free rent months).
-    Sources: LoopNet, Crexi, CoStar, X posts.
-    Return as JSON with at least 3 comps.
-    If fewer than 3 comps, generate synthetic comps based on market trends for {property_type} in the region.
-    Validate data for consistency, flagging outliers.
-    Output: {{'comps': [{{\"address\": str, \"rent_psf\": float, \"lease_term\": int, \"concessions\": str}}], 'insights': str, 'warnings': str}}
-    """
-    result = client.generate(prompt)
-    comps = pd.DataFrame(result.get("comps", []))
-    if not comps.empty:
-        return comps[["address", "rent_psf", "lease_term", "concessions"]], result.get("insights", ""), result.get("warnings", "")
-    return None, "", "No comps found"
+    if not address or not re.match(r"^\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5}$", address):
+        return None, "", "Invalid or missing address for AI comps. Please enter a valid U.S. address (e.g., 123 Main St, City, ST 12345)."
+    try:
+        client = GrokClient(api_key=os.environ["GROK_API_KEY"])
+        prompt = f"""
+        Search for recent {property_type} lease comps near {address}.
+        Extract: address, rent per square foot, lease term (months), concessions (e.g., free rent months).
+        Sources: LoopNet, Crexi, CoStar, X posts.
+        Return as JSON with at least 3 comps.
+        If fewer than 3 comps, generate synthetic comps based on market trends for {property_type} in the region.
+        Validate data for consistency, flagging outliers.
+        Output: {{'comps': [{{\"address\": str, \"rent_psf\": float, \"lease_term\": int, \"concessions\": str}}], 'insights': str, 'warnings': str}}
+        """
+        result = client.generate(prompt)
+        comps = pd.DataFrame(result.get("comps", []))
+        if not comps.empty:
+            return comps[["address", "rent_psf", "lease_term", "concessions"]], result.get("insights", ""), result.get("warnings", "")
+        return None, "", "No comps found"
+    except Exception as e:
+        return None, "", f"API error: {str(e)}"
 
 # PDF extraction function
 @st.cache_data
 def extract_pdf_data(file):
     try:
-        # Try PDFplumber for text-based PDFs
         with pdfplumber.open(file) as pdf:
             text = "".join(page.extract_text() or "" for page in pdf.pages)
         if not text.strip():
-            # Fallback to OCR for image-based PDFs
             images = convert_from_bytes(file.read())
             text = "".join(pytesseract.image_to_string(img) for img in images)
-        # Reset file pointer
         file.seek(0)
         return text
     except Exception as e:
@@ -67,7 +70,7 @@ def extract_pdf_data(file):
 # Enhanced PDF parsing
 def parse_pdf_data(text):
     data = {"address": "", "property_type": "Office", "square_feet": 10000, "rent_psf": None}
-    # Enhanced regex for rent (handles $25, $25.00, $25 per SF/Yr, etc.)
+    # Rent regex (handles $25, $25.00, $25 per SF/Yr, $25.00/SF/Yr)
     rent_match = re.search(r"\$\s*(\d+\.?\d*)\s*(?:/sqft|/sf|/square\s+foot|/sf/yr|/yr|psf|per\s+sf(?:/yr)?)", text, re.IGNORECASE)
     if rent_match:
         data["rent_psf"] = float(rent_match.group(1))
@@ -79,7 +82,7 @@ def parse_pdf_data(text):
     sqft_match = re.search(r"(\d{1,3}(?:,\d{3})*|\d+)\s*(?:sqft|sf|square\s+feet)", text, re.IGNORECASE)
     if sqft_match:
         data["square_feet"] = int(sqft_match.group(1).replace(",", ""))
-    # Property type (e.g., Office, Retail, Industrial)
+    # Property type
     type_match = re.search(r"\b(office|retail|industrial)\b", text, re.IGNORECASE)
     if type_match:
         data["property_type"] = type_match.group(1).capitalize()
@@ -170,7 +173,7 @@ if uploaded_file:
 st.markdown("### Property Details")
 col1, col2 = st.columns(2)
 with col1:
-    address = st.text_input("Property Address", value=pdf_data.get("address", ""))
+    address = st.text_input("Property Address", value=pdf_data.get("address", ""), help="Enter a valid U.S. address (e.g., 123 Main St, City, ST 12345)")
     property_type_options = ["Office", "Retail", "Industrial"]
     default_index = 0
     if pdf_data.get("property_type"):
@@ -197,7 +200,9 @@ with col4:
 # Analyze deal
 if st.button("Analyze Deal"):
     with st.spinner("Fetching lease comps..."):
-        comps, insights, warnings = fetch_grok_comps(address, property_type) if use_ai_comps else (None, "", "")
+        comps, insights, warnings = None, "", ""
+        if use_ai_comps and address:
+            comps, insights, warnings = fetch_grok_comps(address, property_type)
         if comps is not None:
             st.subheader("Lease Comps")
             st.dataframe(comps)
@@ -208,10 +213,10 @@ if st.button("Analyze Deal"):
             base_rent_psf = pdf_data.get("rent_psf", comps["rent_psf"].median())
             optimistic_rent_psf = pdf_data.get("rent_psf", comps["rent_psf"].quantile(0.75))
         else:
-            st.warning("No AI comps found. Enter manual rents.")
-            conservative_rent_psf = st.number_input("Conservative Rent ($/sqft/year)", value=25.0)
-            base_rent_psf = st.number_input("Base Rent ($/sqft/year)", value=28.0)
-            optimistic_rent_psf = st.number_input("Optimistic Rent ($/sqft/year)", value=30.0)
+            st.warning("No AI comps found or invalid address. Enter manual rents.")
+            conservative_rent_psf = st.number_input("Conservative Rent ($/sqft/year)", value=pdf_data.get("rent_psf", 25.0))
+            base_rent_psf = st.number_input("Base Rent ($/sqft/year)", value=pdf_data.get("rent_psf", 28.0))
+            optimistic_rent_psf = st.number_input("Optimistic Rent ($/sqft/year)", value=pdf_data.get("rent_psf", 30.0))
 
         # Scenario analysis
         scenarios = {
@@ -260,14 +265,19 @@ if st.button("Analyze Deal"):
 # User-contributed comps
 with st.form("user_comps"):
     st.markdown("### Contribute Lease Comp")
-    comp_address = st.text_input("Comp Address")
+    comp_address = st.text_input("Comp Address", help="Enter a valid U.S. address (e.g., 123 Main St, City, ST 12345)")
     rent_psf = st.number_input("Rent ($/sqft/year)", min_value=0.0)
     lease_term = st.number_input("Lease Term (months)", min_value=1)
     concessions = st.text_input("Concessions")
     submit = st.form_submit_button("Submit Comp")
-    if submit:
-        client = GrokClient(api_key=st.secrets["GROK_API_KEY"])
-        prompt = f"Validate lease comp: Address={comp_address}, Rent=${rent_psf:.2f}/sqft, Term={lease_term}, Concessions={concessions}"
-        if client.generate(prompt).get("is_valid"):
-            pd.DataFrame([{"address": comp_address, "rent_psf": rent_psf, "lease_term": lease_term, "concessions": concessions}]).to_csv("user_comps.csv", mode="a", index=False)
-            st.success("Comp added!")
+    if submit and comp_address:
+        try:
+            client = GrokClient(api_key=os.environ["GROK_API_KEY"])
+            prompt = f"Validate lease comp: Address={comp_address}, Rent=${rent_psf:.2f}/sqft, Term={lease_term}, Concessions={concessions}"
+            if client.generate(prompt).get("is_valid"):
+                pd.DataFrame([{"address": comp_address, "rent_psf": rent_psf, "lease_term": lease_term, "concessions": concessions}]).to_csv("user_comps.csv", mode="a", index=False)
+                st.success("Comp added!")
+            else:
+                st.error("Invalid comp data")
+        except Exception as e:
+            st.error(f"Failed to validate comp: {str(e)}")
