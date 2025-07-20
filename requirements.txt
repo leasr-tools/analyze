@@ -2,5 +2,9 @@ streamlit
 pandas
 numpy
 plotly
-numpy-financial
+numpy_financial
 reportlab
+xai-grok
+pdfplumber
+pdf2image
+pytesseract
