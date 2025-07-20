@@ -265,6 +265,7 @@ with st.form("user_comps"):
             pd.DataFrame([{"address": comp_address, "rent_psf": rent_psf, "lease_term": lease_term, "concessions": concessions}]).to_csv("user_comps.csv", mode="a", index=False)
             st.success("Comp added!")
 
+#---DONT ERASE
 # # MVP: CRE Deal Analyzer App (Backend with Streamlit + Snowflake + Auth0)
 
 # import streamlit as st
