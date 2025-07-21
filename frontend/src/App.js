@@ -2,26 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Upload, Calculator, FileText, TrendingUp, Building, DollarSign, BarChart3 } from 'lucide-react';
 
-// Sophisticated sage green and luxury cream palette
+// Modern light theme inspired by Wise.com
 const COLORS = {
-  bgPrimary: '#0a0a0b',
-  bgSecondary: '#1a1a1b',
-  cardBg: '#f5f3f0',
-  cardBorder: '#8b7355',
-  sage: '#4a5d3a',
-  sageLight: '#6b7c5c',
-  forest: '#2d3d20',
-  taupe: '#8b7355',
-  cream: '#f5f3f0',
-  creamLight: '#e8e4df',
-  textPrimary: '#ffffff',
-  textSecondary: '#f5f3f0',
-  autofill: '#6b7c5c',
-  error: '#b94a48',
-  warning: '#e8e4df'
+  bgPrimary: '#f9fafb',     // light background
+  cardBg: '#ffffff',        // white cards
+  cardBorder: '#e5e7eb',    // light gray border
+  accent: '#00a86b',        // modern green
+  accentLight: '#3ddc97',   // lighter accent
+  textPrimary: '#111827',   // dark gray text
+  textSecondary: '#4b5563', // medium gray text
+  autofill: '#d1fae5',      // subtle green highlight
+  error: '#dc2626',         // red
+  warning: '#f59e0b',       // amber
 };
 
-const FONT_FAMILY = `'Cormorant Garamond', 'Manrope', 'serif'`;
+const FONT_FAMILY = `'Inter', 'Segoe UI', sans-serif`;
 
 const LeasrAnalyze = () => {
   useEffect(() => {
@@ -64,7 +59,6 @@ const LeasrAnalyze = () => {
   const [parsedData, setParsedData] = useState(null);
   const [autoFilledFields, setAutoFilledFields] = useState(new Set());
 
-  // API configuration
   const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : 'https://analyze-ysg7.onrender.com';
@@ -76,82 +70,8 @@ const LeasrAnalyze = () => {
     setAutoFilledFields(newAutoFilled);
   };
 
-  const handleGeneralParamsChange = (field, value) => {
-    setGeneralParams(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleScenarioChange = (scenario, field, value) => {
-    setScenarios(prev => ({
-      ...prev,
-      [scenario]: { ...prev[scenario], [field]: value }
-    }));
-    const newAutoFilled = new Set(autoFilledFields);
-    newAutoFilled.delete(`${scenario}-${field}`);
-    setAutoFilledFields(newAutoFilled);
-  };
-
-  // Auto-fill scenario values when benchmark data changes
-  useEffect(() => {
-    if (benchmarkData.rent) {
-      const newAutoFilled = new Set(autoFilledFields);
-
-      if (!scenarios.conservative.rent) {
-        setScenarios(prev => ({
-          ...prev,
-          conservative: {
-            ...prev.conservative,
-            rent: (parseFloat(benchmarkData.rent) * 0.9).toFixed(2),
-            downPayment: prev.conservative.downPayment || '30',
-            interestRate: prev.conservative.interestRate || '6.5',
-            appreciation: prev.conservative.appreciation || '2'
-          }
-        }));
-        newAutoFilled.add('conservative-rent');
-        newAutoFilled.add('conservative-downPayment');
-        newAutoFilled.add('conservative-interestRate');
-        newAutoFilled.add('conservative-appreciation');
-      }
-
-      if (!scenarios.base.rent) {
-        setScenarios(prev => ({
-          ...prev,
-          base: {
-            ...prev.base,
-            rent: benchmarkData.rent,
-            downPayment: prev.base.downPayment || '25',
-            interestRate: prev.base.interestRate || '5.5',
-            appreciation: prev.base.appreciation || '3'
-          }
-        }));
-        newAutoFilled.add('base-rent');
-        newAutoFilled.add('base-downPayment');
-        newAutoFilled.add('base-interestRate');
-        newAutoFilled.add('base-appreciation');
-      }
-
-      if (!scenarios.optimistic.rent) {
-        setScenarios(prev => ({
-          ...prev,
-          optimistic: {
-            ...prev.optimistic,
-            rent: (parseFloat(benchmarkData.rent) * 1.1).toFixed(2),
-            downPayment: prev.optimistic.downPayment || '20',
-            interestRate: prev.optimistic.interestRate || '4.5',
-            appreciation: prev.optimistic.appreciation || '4'
-          }
-        }));
-        newAutoFilled.add('optimistic-rent');
-        newAutoFilled.add('optimistic-downPayment');
-        newAutoFilled.add('optimistic-interestRate');
-        newAutoFilled.add('optimistic-appreciation');
-      }
-
-      setAutoFilledFields(newAutoFilled);
-    }
-  }, [benchmarkData.rent]);
-
   const handleFileUpload = async (file) => {
-    setUploadStatus('📄 Uploading to server...');
+    setUploadStatus('Uploading to server...');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -170,52 +90,23 @@ const LeasrAnalyze = () => {
       setParsedData(extractedData);
 
       const newAutoFilled = new Set();
-
-      if (extractedData.rent) {
-        setBenchmarkData(prev => ({ ...prev, rent: extractedData.rent.toString() }));
-        newAutoFilled.add('rent');
-      }
-      if (extractedData.sqft) {
-        setBenchmarkData(prev => ({ ...prev, sqft: extractedData.sqft.toString() }));
-        newAutoFilled.add('sqft');
-      }
-      if (extractedData.cam) {
-        setBenchmarkData(prev => ({ ...prev, cam: extractedData.cam.toString() }));
-        newAutoFilled.add('cam');
-      }
-      if (extractedData.taxes) {
-        setBenchmarkData(prev => ({ ...prev, taxes: extractedData.taxes.toString() }));
-        newAutoFilled.add('taxes');
-      }
-      if (extractedData.price) {
-        setBenchmarkData(prev => ({ ...prev, purchasePrice: extractedData.price.toString() }));
-        newAutoFilled.add('purchasePrice');
-      }
-      if (extractedData.operatingExpenses) {
-        setBenchmarkData(prev => ({ ...prev, operatingExpenses: extractedData.operatingExpenses.toString() }));
-        newAutoFilled.add('operatingExpenses');
-      }
-      if (extractedData.propertyType) {
-        setBenchmarkData(prev => ({ ...prev, propertyType: extractedData.propertyType }));
-        newAutoFilled.add('propertyType');
-      }
-
+      ['rent', 'sqft', 'cam', 'taxes', 'price', 'operatingExpenses', 'propertyType'].forEach((key) => {
+        if (extractedData[key]) {
+          const field = key === 'price' ? 'purchasePrice' : key;
+          setBenchmarkData(prev => ({ ...prev, [field]: extractedData[key].toString() }));
+          newAutoFilled.add(field);
+        }
+      });
       setAutoFilledFields(newAutoFilled);
-
-      const fieldCount = Object.keys(extractedData).filter(key => 
-        !['documentType', 'textLength', 'validation', 'textSample'].includes(key) && extractedData[key] != null
-      ).length;
-
-      setUploadStatus(`✅ Successfully parsed ${extractedData.documentType || 'document'}: ${fieldCount} fields extracted`);
-
+      setUploadStatus(`Successfully parsed ${extractedData.documentType || 'document'}`);
     } catch (error) {
       console.error('Upload error:', error);
-      setUploadStatus(`❌ Error: ${error.message}`);
+      setUploadStatus(`Error: ${error.message}`);
     }
   };
 
   const calculateMetrics = async () => {
-    setUploadStatus('🔢 Running financial analysis...');
+    setUploadStatus('Running financial analysis...');
     try {
       const requestData = {
         general: {
@@ -228,26 +119,7 @@ const LeasrAnalyze = () => {
           loanTerm: parseInt(generalParams.loanTerm) || 25,
           interestOnlyPeriod: parseInt(generalParams.interestOnlyPeriod) || 2
         },
-        scenarios: {
-          conservative: {
-            rent: parseFloat(scenarios.conservative.rent) || parseFloat(benchmarkData.rent) * 0.9 || 22.5,
-            downPayment: parseFloat(scenarios.conservative.downPayment) || 30,
-            interestRate: parseFloat(scenarios.conservative.interestRate) || 6.5,
-            appreciation: parseFloat(scenarios.conservative.appreciation) || 2
-          },
-          base: {
-            rent: parseFloat(scenarios.base.rent) || parseFloat(benchmarkData.rent) || 25,
-            downPayment: parseFloat(scenarios.base.downPayment) || 25,
-            interestRate: parseFloat(scenarios.base.interestRate) || 5.5,
-            appreciation: parseFloat(scenarios.base.appreciation) || 3
-          },
-          optimistic: {
-            rent: parseFloat(scenarios.optimistic.rent) || parseFloat(benchmarkData.rent) * 1.1 || 27.5,
-            downPayment: parseFloat(scenarios.optimistic.downPayment) || 20,
-            interestRate: parseFloat(scenarios.optimistic.interestRate) || 4.5,
-            appreciation: parseFloat(scenarios.optimistic.appreciation) || 4
-          }
-        }
+        scenarios
       };
 
       const response = await fetch(`${API_BASE_URL}/calculate-metrics`, {
@@ -256,19 +128,14 @@ const LeasrAnalyze = () => {
         body: JSON.stringify(requestData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to calculate metrics');
-      }
-
+      if (!response.ok) throw new Error('Failed to calculate metrics');
       const calculatedResults = await response.json();
       setResults(calculatedResults);
       setActiveTab('results');
-      setUploadStatus('✅ Analysis complete!');
-
+      setUploadStatus('Analysis complete!');
     } catch (error) {
       console.error('Calculation error:', error);
-      setUploadStatus(`❌ Calculation error: ${error.message}`);
+      setUploadStatus(`Calculation error: ${error.message}`);
     }
   };
 
@@ -295,15 +162,9 @@ const LeasrAnalyze = () => {
           const appreciation = parseFloat(scenarios[scenario].appreciation) || 3;
           const downPaymentAmount = purchasePrice * (downPayment / 100);
           const currentValue = purchasePrice * Math.pow(1 + appreciation / 100, year);
-          const remainingBalance = year === 0 ? purchasePrice * (1 - downPayment / 100) : 
-            (results[scenario].amortSchedule && results[scenario].amortSchedule[Math.min(year * 12 - 1, results[scenario].amortSchedule.length - 1)]?.balance || 0);
-          const cumulativeCashFlow = year === 0 ? 0 : 
-            (results[scenario].annualCashFlows ? results[scenario].annualCashFlows.slice(0, year).reduce((sum, cf) => sum + cf, 0) : 0);
+          const remainingBalance = year === 0 ? purchasePrice * (1 - downPayment / 100) : 0;
           const equity = currentValue - remainingBalance;
-          const totalProfit = (equity - downPaymentAmount) + cumulativeCashFlow;
           dataPoint[`${scenario}Equity`] = equity;
-          dataPoint[`${scenario}CashFlow`] = cumulativeCashFlow;
-          dataPoint[`${scenario}Profit`] = totalProfit;
         }
       });
       data.push(dataPoint);
@@ -315,14 +176,12 @@ const LeasrAnalyze = () => {
     <div
       className="container"
       style={{
-        maxWidth: 720, // Reduced from 1200 for a more elegant, readable width
-        margin: '3rem auto', // Adds vertical margin for luxury feel
-        padding: '0 2rem',   // More generous horizontal padding
+        maxWidth: 960,
+        margin: '2rem auto',
+        padding: '0 1.5rem',
         fontFamily: FONT_FAMILY,
         background: COLORS.bgPrimary,
         color: COLORS.textPrimary,
-        borderRadius: 18, // Soft rounded corners for premium look
-        boxShadow: '0 8px 32px rgba(74,93,58,0.10)' // Subtle shadow for depth
       }}
     >
       <div
@@ -330,453 +189,219 @@ const LeasrAnalyze = () => {
         style={{
           marginBottom: '2rem',
           background: COLORS.cardBg,
-          border: `1.5px solid ${COLORS.sage}`,
+          border: `1px solid ${COLORS.cardBorder}`,
           borderRadius: 12,
-          boxShadow: '0 6px 24px rgba(74,93,58,0.08)'
+          boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+          padding: '2rem',
         }}
       >
         {/* Header */}
-        <div
-          className="header"
-          style={{
-            marginBottom: '2rem',
-            background: 'none',
-            boxShadow: 'none',
-            border: 'none',
-            padding: '2rem 0'
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '16px',
-              marginBottom: '16px'
-            }}>
-              <Building style={{ width: '48px', height: '48px', color: COLORS.sage }} />
-              <h1
-                style={{
-                  fontFamily: FONT_FAMILY,
-                  fontWeight: 700,
-                  fontSize: '2.7rem',
-                  marginBottom: 0,
-                  background: `linear-gradient(90deg, ${COLORS.sage}, ${COLORS.sageLight})`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  letterSpacing: '2px'
-                }}
-              >
-                Leasr Analyze
-              </h1>
-            </div>
-            <p style={{
-              color: COLORS.textSecondary,
-              fontSize: '1.25rem',
-              maxWidth: '600px',
-              margin: '0 auto',
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <Building style={{ width: '40px', height: '40px', color: COLORS.accent, marginBottom: '0.5rem' }} />
+          <h1
+            style={{
               fontFamily: FONT_FAMILY,
-              letterSpacing: '0.5px'
-            }}>
-              AI-powered commercial real estate investment analysis with multi-scenario modeling and market intelligence
-            </p>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '24px',
-              marginTop: '24px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <DollarSign style={{ width: '20px', height: '20px', color: COLORS.sage }} />
-                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>IRR Analysis</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart3 style={{ width: '20px', height: '20px', color: COLORS.sage }} />
-                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>Market Intelligence</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calculator style={{ width: '20px', height: '20px', color: COLORS.sage }} />
-                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>Multi-Scenario</span>
-              </div>
-            </div>
-          </div>
+              fontWeight: 700,
+              fontSize: '2.2rem',
+              color: COLORS.accent,
+              marginBottom: '0.5rem'
+            }}
+          >
+            Leasr Analyze
+          </h1>
+          <p style={{ color: COLORS.textSecondary, fontSize: '1rem', marginBottom: '1rem' }}>
+            AI-powered commercial real estate investment analysis
+          </p>
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ marginBottom: '2rem', borderBottom: `1.5px solid ${COLORS.taupe}` }}>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            {[
-              { id: 'input', label: 'Deal Input', icon: FileText },
-              { id: 'results', label: 'Analysis Results', icon: TrendingUp }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="button"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '1.1rem',
-                  fontFamily: FONT_FAMILY,
-                  background: activeTab === tab.id ? COLORS.sage : COLORS.cardBg,
-                  color: activeTab === tab.id ? COLORS.textPrimary : COLORS.sage,
-                  border: `2px solid ${COLORS.sage}`,
-                  borderRadius: 8,
-                  boxShadow: activeTab === tab.id ? `0 2px 12px ${COLORS.sage}55` : 'none',
-                  fontWeight: 600,
-                  padding: '0.75rem 1.5rem',
-                  transition: 'all 0.2s',
-                  cursor: 'pointer'
-                }}
-              >
-                <tab.icon style={{ width: '18px', height: '18px', color: activeTab === tab.id ? COLORS.cardBg : COLORS.sage }} />
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '1.5rem' }}>
+          {[
+            { id: 'input', label: 'Deal Input', icon: FileText },
+            { id: 'results', label: 'Analysis Results', icon: TrendingUp }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '1rem',
+                fontFamily: FONT_FAMILY,
+                background: activeTab === tab.id ? COLORS.accent : '#ffffff',
+                color: activeTab === tab.id ? '#ffffff' : COLORS.accent,
+                border: `1px solid ${COLORS.accent}`,
+                borderRadius: 6,
+                padding: '0.5rem 1.2rem',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+            >
+              <tab.icon style={{ width: '18px', height: '18px' }} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Content */}
-        <div style={{ padding: '2rem 0' }}>
-          {activeTab === 'input' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              {/* File Upload Section */}
-              <div className="card" style={{
-                textAlign: 'center',
+        {activeTab === 'input' && (
+          <div>
+            {/* File Upload */}
+            <div style={{
+              textAlign: 'center',
+              background: COLORS.cardBg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: 8,
+              padding: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <Upload style={{ width: '40px', height: '40px', color: COLORS.accent, marginBottom: '0.5rem' }} />
+              <h3 style={{ fontSize: '1.25rem', color: COLORS.accent, marginBottom: '0.5rem' }}>
+                Upload CoStar or Title Report
+              </h3>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) handleFileUpload(file);
+                }}
+                style={{ display: 'none' }}
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
+                style={{
+                  display: 'inline-block',
+                  background: COLORS.accent,
+                  color: '#fff',
+                  padding: '0.5rem 1rem',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginTop: '0.5rem'
+                }}
+              >
+                Choose PDF File
+              </label>
+              {uploadStatus && <p style={{ marginTop: '0.75rem', color: COLORS.textSecondary }}>{uploadStatus}</p>}
+            </div>
+
+            {/* Benchmark Data */}
+            <div
+              style={{
                 background: COLORS.cardBg,
-                border: `1.5px solid ${COLORS.sageLight}`,
-                boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
+                border: `1px solid ${COLORS.cardBorder}`,
+                borderRadius: 8,
+                padding: '1.5rem',
+              }}
+            >
+              <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>Benchmark Data</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem'
               }}>
-                <Upload style={{ width: '48px', height: '48px', color: COLORS.sage, margin: '0 auto 16px' }} />
-                <h3 className="section-title" style={{
-                  fontSize: '1.25rem',
-                  marginBottom: '8px',
-                  fontFamily: FONT_FAMILY,
-                  color: COLORS.sage
-                }}>
-                  Upload CoStar or Title Report
-                </h3>
-                <p style={{ color: COLORS.textSecondary, marginBottom: '24px', fontFamily: FONT_FAMILY }}>
-                  AI-powered parsing of PDF documents for instant data extraction
-                </p>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) handleFileUpload(file);
-                  }}
-                  style={{ display: 'none' }}
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="button"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: COLORS.sage,
-                    color: COLORS.cardBg,
-                    fontFamily: FONT_FAMILY,
-                    fontWeight: 600,
-                    border: `2px solid ${COLORS.sage}`,
-                    borderRadius: 8,
-                    boxShadow: `0 2px 12px ${COLORS.sage}33`,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Upload style={{ width: '20px', height: '20px', color: COLORS.cardBg }} />
-                  Choose PDF File
-                </label>
-                {uploadStatus && (
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    backgroundColor: uploadStatus.includes('✅') ? COLORS.creamLight : uploadStatus.includes('❌') ? '#3d1a1a' : COLORS.cardBg,
-                    border: `1.5px solid ${uploadStatus.includes('✅') ? COLORS.forest : uploadStatus.includes('❌') ? COLORS.error : COLORS.sageLight}`,
-                    color: uploadStatus.includes('✅') ? COLORS.forest : uploadStatus.includes('❌') ? COLORS.error : COLORS.sage,
-                    fontFamily: FONT_FAMILY,
-                    fontWeight: 600
-                  }}>
-                    {uploadStatus}
-                  </div>
-                )}
-                {parsedData && (
-                  <div className="card" style={{
-                    marginTop: '24px',
-                    textAlign: 'left',
-                    background: COLORS.cardBg,
-                    border: `1.5px solid ${COLORS.sageLight}`,
-                    boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h4 className="section-title">Extracted Data</h4>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        backgroundColor: parsedData.documentType === 'title' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                        color: parsedData.documentType === 'title' ? '#10b981' : '#3b82f6',
-                        border: `1px solid ${parsedData.documentType === 'title' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
-                      }}>
-                        {parsedData.documentType?.toUpperCase() || 'UNKNOWN'} REPORT
-                      </span>
-                    </div>
-                    {/* Location Information */}
-                    {(parsedData.city || parsedData.state || parsedData.county) && (
-                      <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                        <div style={{ color: '#3b82f6', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>📍 LOCATION DATA:</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '12px' }}>
-                          {parsedData.city && (
-                            <div><span className="label-text">City:</span> <span className="value-text">{parsedData.city}</span></div>
-                          )}
-                          {parsedData.state && (
-                            <div><span className="label-text">State:</span> <span className="value-text">{parsedData.state}</span></div>
-                          )}
-                          {parsedData.county && (
-                            <div><span className="label-text">County:</span> <span className="value-text">{parsedData.county}</span></div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {/* Price Note for Transparency */}
-                    {parsedData.priceNote && (
-                      <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                        <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '500' }}>{parsedData.priceNote}</div>
-                      </div>
-                    )}
-                    {/* Validation Results */}
-                    {parsedData.validation && (
-                      <div style={{ marginBottom: '16px' }}>
-                        {parsedData.validation.errors?.length > 0 && (
-                          <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
-                            <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>❌ ERRORS:</div>
-                            {parsedData.validation.errors.map((error, idx) => (
-                              <div key={idx} style={{ color: '#ef4444', fontSize: '12px', marginLeft: '16px' }}>• {error}</div>
-                            ))}
-                          </div>
-                        )}
-                        {parsedData.validation.warnings?.length > 0 && (
-                          <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px' }}>
-                            <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>⚠️ WARNINGS:</div>
-                            {parsedData.validation.warnings.map((warning, idx) => (
-                              <div key={idx} style={{ color: '#f59e0b', fontSize: '12px', marginLeft: '16px' }}>• {warning}</div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* Extracted Fields */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px' }}>
-                      {Object.entries(parsedData).filter(([key, value]) => 
-                        !['documentType', 'validation', 'rawTextLength', 'detectedType', 'textLength', 'textSample', 'city', 'state', 'county', 'priceNote'].includes(key) && 
-                        value !== null && value !== undefined
-                      ).map(([key, value]) => (
-                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                          <span className="label-text" style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                          <span className="value-text">
-                            {typeof value === 'number' && ['rent', 'cam', 'taxes'].includes(key) ? `$${value}` :
-                             typeof value === 'number' && ['price', 'operatingExpenses'].includes(key) ? `$${value.toLocaleString()}` :
-                             typeof value === 'number' && key === 'sqft' ? `${value.toLocaleString()} sf` :
-                             typeof value === 'number' && key === 'acreage' ? `${value} acres` :
-                             typeof value === 'string' && value.length > 30 ? `${value.substring(0, 30)}...` :
-                             value.toString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {/* Benchmark Data */}
-              <div className="card" style={{
-                background: COLORS.cardBg,
-                border: `1.5px solid ${COLORS.sageLight}`,
-                boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
-              }}>
-                <h3 className="section-title" style={{
-                  fontFamily: FONT_FAMILY,
-                  color: COLORS.sage,
-                  fontWeight: 700
-                }}>Benchmark Data</h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                  gap: '24px'
-                }}>
-                  {[
-                    { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
-                    { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00' },
-                    { key: 'taxes', label: 'Taxes ($/sqft)', placeholder: '3.50' },
-                    { key: 'sqft', label: 'Square Feet', placeholder: '10000' },
-                    { key: 'purchasePrice', label: 'Purchase Price', placeholder: '1000000' },
-                    { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000' }
-                  ].map(field => (
-                    <div key={field.key}>
-                      <label style={{
-                        display: 'block',
-                        marginBottom: '8px',
-                        color: COLORS.sage,
+                {[
+                  { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
+                  { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00' },
+                  { key: 'taxes', label: 'Taxes ($/sqft)', placeholder: '3.50' },
+                  { key: 'sqft', label: 'Square Feet', placeholder: '10000' },
+                  { key: 'purchasePrice', label: 'Purchase Price', placeholder: '1000000' },
+                  { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000' }
+                ].map(field => (
+                  <div key={field.key}>
+                    <label style={{ display: 'block', marginBottom: '0.3rem', color: COLORS.textSecondary }}>
+                      {field.label}
+                    </label>
+                    <input
+                      type="number"
+                      value={benchmarkData[field.key]}
+                      onChange={(e) => handleBenchmarkChange(field.key, e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.8rem',
+                        border: `1px solid ${COLORS.cardBorder}`,
+                        borderRadius: 6,
+                        fontSize: '0.95rem',
                         fontFamily: FONT_FAMILY,
-                        fontWeight: 600
-                      }}>
-                        {field.label}
-                        {autoFilledFields.has(field.key) && (
-                          <span style={{
-                            marginLeft: '8px',
-                            fontSize: '10px',
-                            color: COLORS.autofill,
-                            fontWeight: '600',
-                            background: `${COLORS.autofill}22`,
-                            padding: '2px 8px',
-                            borderRadius: '8px'
-                          }}>
-                            ✨ AUTO-FILLED
-                          </span>
-                        )}
-                      </label>
-                      <input
-                        type="number"
-                        value={benchmarkData[field.key]}
-                        onChange={(e) => handleBenchmarkChange(field.key, e.target.value)}
-                        className="input-field"
-                        style={{
-                          backgroundColor: COLORS.bgSecondary,
-                          borderColor: COLORS.sage,
-                          borderRadius: 8,
-                          color: COLORS.textPrimary,
-                          padding: '12px 16px',
-                          fontSize: '15px',
-                          width: '100%',
-                          fontFamily: FONT_FAMILY,
-                          fontWeight: 500,
-                          outline: 'none',
-                          boxShadow: 'none',
-                          transition: 'border-color 0.2s',
-                        }}
-                        placeholder={field.placeholder}
-                        onFocus={e => e.target.style.borderColor = COLORS.sageLight}
-                        onBlur={e => e.target.style.borderColor = COLORS.sage}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* ...other sections (General Params, Scenarios, etc.) should follow the same color/font logic... */}
-            </div>
-          )}
-          {activeTab === 'results' && results && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              {/* Summary Card */}
-              <div className="card" style={{ background: 'var(--color-bg-alt)', padding: '24px', borderRadius: 'var(--radius-lg)', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '16px', right: '16px', fontSize: '12px', color: 'var(--color-text-light)' }}>
-                  {results.analysisDate && (
-                    <div>
-                      <strong>Analysis Date:</strong> {new Date(results.analysisDate).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-                <h3 className="section-title" style={{ marginBottom: '16px' }}>Investment Summary</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                  <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-text-light)', marginBottom: '8px' }}>Total Investment</div>
-                    <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                      ${results.totalInvestment?.toLocaleString()}
-                    </div>
+                        color: COLORS.textPrimary,
+                        backgroundColor: '#fff',
+                      }}
+                      placeholder={field.placeholder}
+                    />
                   </div>
-                  <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-text-light)', marginBottom: '8px' }}>Annual Cash Flow</div>
-                    <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                      ${results.annualCashFlow?.toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-text-light)', marginBottom: '8px' }}>IRR (Conservative)</div>
-                    <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                      {results.conservative.irr ? `${(results.conservative.irr * 100).toFixed(2)}%` : '-'}
-                    </div>
-                  </div>
-                  <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-text-light)', marginBottom: '8px' }}>IRR (Base)</div>
-                    <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                      {results.base.irr ? `${(results.base.irr * 100).toFixed(2)}%` : '-'}
-                    </div>
-                  </div>
-                  <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--color-text-light)', marginBottom: '8px' }}>IRR (Optimistic)</div>
-                    <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                      {results.optimistic.irr ? `${(results.optimistic.irr * 100).toFixed(2)}%` : '-'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rent Sensitivity Analysis */}
-              <div className="card">
-                <h3 className="section-title">Rent Sensitivity Analysis</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '14px', fontWeight: '500', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', paddingBottom: '8px' }}>
-                    <div>Change</div>
-                    <div style={{ textAlign: 'center' }}>Conservative</div>
-                    <div style={{ textAlign: 'center' }}>Base</div>
-                    <div style={{ textAlign: 'center' }}>Optimistic</div>
-                  </div>
-                  {generateRentSensitivity().map(row => (
-                    <div key={row.rentChange} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '14px', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                      <div style={{ fontWeight: '500', color: 'var(--color-text)' }}>{row.rentChange}</div>
-                      <div style={{ textAlign: 'center', color: 'var(--color-text)' }}>${row.conservative}</div>
-                      <div style={{ textAlign: 'center', color: 'var(--color-text)' }}>${row.base}</div>
-                      <div style={{ textAlign: 'center', color: 'var(--color-text)' }}>${row.optimistic}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Series Analysis */}
-              <div className="card">
-                <h3 className="section-title">Time Series Analysis</h3>
-                <div style={{ height: '400px', width: '100%' }}>
-                  <ResponsiveContainer>
-                    <LineChart data={generateTimeSeriesData()} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                      <XAxis dataKey="year" tickLine={false} />
-                      <YAxis tickLine={false} />
-                      <Tooltip formatter={(value) => [`$${value}`, '']} contentStyle={{ backgroundColor: 'var(--color-bg)', borderRadius: 'var(--radius-md)' }} />
-                      <Legend wrapperStyle={{ paddingTop: '16px' }} />
-                      <Line type="monotone" dataKey="conservativeEquity" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="baseEquity" stroke="#3b82f6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="optimisticEquity" stroke="#ef4444" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', fontSize: '14px', color: 'var(--color-text-light)' }}>
-                  <div>Equity Growth Over Time</div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '50%' }} />
-                      Conservative
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ width: '12px', height: '12px', backgroundColor: '#3b82f6', borderRadius: '50%' }} />
-                      Base
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <div style={{ width: '12px', height: '12px', backgroundColor: '#ef4444', borderRadius: '50%' }} />
-                      Optimistic
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {activeTab === 'results' && results && (
+          <div>
+            {/* Investment Summary */}
+            <div style={{
+              background: COLORS.cardBg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: 8,
+              padding: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>Investment Summary</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem'
+              }}>
+                <div><strong>Total Investment:</strong> ${results.totalInvestment?.toLocaleString()}</div>
+                <div><strong>Annual Cash Flow:</strong> ${results.annualCashFlow?.toLocaleString()}</div>
+                <div><strong>IRR (Base):</strong> {results.base.irr ? `${(results.base.irr * 100).toFixed(2)}%` : '-'}</div>
+              </div>
+            </div>
+
+            {/* Rent Sensitivity */}
+            <div style={{
+              background: COLORS.cardBg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: 8,
+              padding: '1.5rem',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>Rent Sensitivity</h3>
+              <div>
+                {generateRentSensitivity().map(row => (
+                  <div key={row.rentChange} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: `1px solid ${COLORS.cardBorder}` }}>
+                    <div>{row.rentChange}</div>
+                    <div>${row.base}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div style={{
+              background: COLORS.cardBg,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: 8,
+              padding: '1.5rem'
+            }}>
+              <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>Equity Growth</h3>
+              <div style={{ height: '300px' }}>
+                <ResponsiveContainer>
+                  <LineChart data={generateTimeSeriesData()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={COLORS.cardBorder} />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="baseEquity" stroke={COLORS.accent} strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
