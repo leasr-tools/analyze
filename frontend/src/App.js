@@ -1,32 +1,192 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Calculator, FileText, TrendingUp } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Upload, Calculator, FileText, TrendingUp, Building, DollarSign, BarChart3 } from 'lucide-react';
 
-const CREAnalyzer = () => {
+const LeasrAnalyze = () => {
   useEffect(() => {
-    // Add Tailwind CSS dynamically
-    const link = document.createElement('link');
-    link.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-    
-    return () => {
-      // Cleanup
-      document.head.removeChild(link);
-    };
+    const style = document.createElement('style');
+    style.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #0a0a0b;
+        color: #ffffff;
+        overflow-x: hidden;
+      }
+      
+      .app-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+      }
+      
+      .app-container::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: 
+          radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+      }
+      
+      .glass-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      }
+      
+      .hero-gradient {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+        border-radius: 24px 24px 0 0;
+      }
+      
+      .tab-button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      
+      .tab-button:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        transform: translateY(-2px);
+      }
+      
+      .tab-button.active {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+      }
+      
+      .form-section {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(15px);
+      }
+      
+      .input-field {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        color: white;
+        padding: 12px 16px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+      
+      .input-field:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        background: rgba(255, 255, 255, 0.12);
+      }
+      
+      .input-field::placeholder { color: rgba(255, 255, 255, 0.5); }
+      
+      .premium-button {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        border-radius: 16px;
+        color: white;
+        padding: 16px 32px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+      }
+      
+      .premium-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+      }
+      
+      .upload-zone {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        transition: all 0.3s ease;
+      }
+      
+      .upload-zone:hover {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+        transform: translateY(-2px);
+      }
+      
+      .metric-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(15px);
+        transition: all 0.3s ease;
+      }
+      
+      .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      }
+      
+      .metric-card.conservative { border-left: 4px solid #ef4444; }
+      .metric-card.base { border-left: 4px solid #3b82f6; }
+      .metric-card.optimistic { border-left: 4px solid #10b981; }
+      
+      .table-container {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        backdrop-filter: blur(15px);
+      }
+      
+      .table-header {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+      }
+      
+      .table-row {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        transition: background 0.2s ease;
+      }
+      
+      .table-row:hover { background: rgba(255, 255, 255, 0.05); }
+      
+      .logo-text {
+        background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      
+      .subtitle-text { color: rgba(255, 255, 255, 0.7); }
+      .section-title { color: rgba(255, 255, 255, 0.95); font-weight: 600; }
+      .label-text { color: rgba(255, 255, 255, 0.8); font-weight: 500; font-size: 14px; }
+      .value-text { color: white; font-weight: 600; }
+      
+      .floating-icon { animation: float 3s ease-in-out infinite; }
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
   }, []);
-  useEffect(() => {
-    // Load PDF.js
-    if (!window.pdfjsLib) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js';
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
-      };
-      document.head.appendChild(script);
-    }
-  }, []);
-  const [activeTab, setActiveTab] = useState('input');
+const [activeTab, setActiveTab] = useState('input');
   const [benchmarkData, setBenchmarkData] = useState({
     rent: '',
     cam: '',
@@ -53,14 +213,18 @@ const CREAnalyzer = () => {
   const [results, setResults] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
   const [parsedData, setParsedData] = useState(null);
+  const [autoFilledFields, setAutoFilledFields] = useState(new Set());
   
-  // API configuration - using your deployed Render URL
+  // API configuration
   const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : 'https://analyze-ysg7.onrender.com';
 
   const handleBenchmarkChange = (field, value) => {
     setBenchmarkData(prev => ({ ...prev, [field]: value }));
+    const newAutoFilled = new Set(autoFilledFields);
+    newAutoFilled.delete(field);
+    setAutoFilledFields(newAutoFilled);
   };
 
   const handleGeneralParamsChange = (field, value) => {
@@ -72,528 +236,192 @@ const CREAnalyzer = () => {
       ...prev,
       [scenario]: { ...prev[scenario], [field]: value }
     }));
+    const newAutoFilled = new Set(autoFilledFields);
+    newAutoFilled.delete(`${scenario}-${field}`);
+    setAutoFilledFields(newAutoFilled);
   };
+// Auto-fill scenario values when benchmark data changes
+  useEffect(() => {
+    if (benchmarkData.rent) {
+      const newAutoFilled = new Set(autoFilledFields);
 
-  // Enhanced PDF parsing with OCR fallback and validation
-  const extractNumberFromText = (text, patterns) => {
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
-      if (match) {
-        const numStr = match[1] || match[0];
-        const cleanNum = numStr.replace(/[,$\s]/g, '');
-        const num = parseFloat(cleanNum);
-        if (!isNaN(num) && num > 0) return num;
+      if (!scenarios.conservative.rent) {
+        setScenarios(prev => ({
+          ...prev,
+          conservative: {
+            ...prev.conservative,
+            rent: (parseFloat(benchmarkData.rent) * 0.9).toFixed(2),
+            downPayment: prev.conservative.downPayment || '30',
+            interestRate: prev.conservative.interestRate || '6.5',
+            appreciation: prev.conservative.appreciation || '2'
+          }
+        }));
+        newAutoFilled.add('conservative-rent');
+        newAutoFilled.add('conservative-downPayment');
+        newAutoFilled.add('conservative-interestRate');
+        newAutoFilled.add('conservative-appreciation');
       }
-    }
-    return null;
-  };
 
-  const validateExtractedData = (data, docType) => {
-    const validation = { isValid: true, warnings: [], errors: [] };
-    
-    // Rent validation
-    if (data.rent) {
-      if (data.rent < 5 || data.rent > 200) {
-        validation.warnings.push(`Rent ${data.rent}/sf seems unusual (typical range: $5-200/sf)`);
+      if (!scenarios.base.rent) {
+        setScenarios(prev => ({
+          ...prev,
+          base: {
+            ...prev.base,
+            rent: benchmarkData.rent,
+            downPayment: prev.base.downPayment || '25',
+            interestRate: prev.base.interestRate || '5.5',
+            appreciation: prev.base.appreciation || '3'
+          }
+        }));
+        newAutoFilled.add('base-rent');
+        newAutoFilled.add('base-downPayment');
+        newAutoFilled.add('base-interestRate');
+        newAutoFilled.add('base-appreciation');
       }
-    }
-    
-    // Square footage validation
-    if (data.sqft) {
-      if (data.sqft < 500 || data.sqft > 1000000) {
-        validation.warnings.push(`Square footage ${data.sqft.toLocaleString()} seems unusual`);
+
+      if (!scenarios.optimistic.rent) {
+        setScenarios(prev => ({
+          ...prev,
+          optimistic: {
+            ...prev.optimistic,
+            rent: (parseFloat(benchmarkData.rent) * 1.1).toFixed(2),
+            downPayment: prev.optimistic.downPayment || '20',
+            interestRate: prev.optimistic.interestRate || '4.5',
+            appreciation: prev.optimistic.appreciation || '4'
+          }
+        }));
+        newAutoFilled.add('optimistic-rent');
+        newAutoFilled.add('optimistic-downPayment');
+        newAutoFilled.add('optimistic-interestRate');
+        newAutoFilled.add('optimistic-appreciation');
       }
+
+      setAutoFilledFields(newAutoFilled);
     }
-    
-    // Purchase price validation
-    if (data.price && data.sqft) {
-      const pricePerSqft = data.price / data.sqft;
-      if (pricePerSqft < 50 || pricePerSqft > 2000) {
-        validation.warnings.push(`Price per sqft ${pricePerSqft.toFixed(0)} seems unusual (typical: $50-2000/sf)`);
-      }
-    }
-    
-    // CAM validation
-    if (data.cam && data.cam > 50) {
-      validation.warnings.push(`CAM charges ${data.cam}/sf seem high (typical: $2-15/sf)`);
-    }
-    
-    // Cross-validation
-    if (docType === 'costar' && !data.rent && !data.sqft) {
-      validation.errors.push('No rental or size data found in CoStar report');
-    }
-    
-    if (docType === 'title' && !data.price && !data.legalDescription) {
-      validation.errors.push('No sale price or legal description found in title report');
-    }
-    
-    validation.isValid = validation.errors.length === 0;
-    return validation;
-  };
-
-  const parseTitleReport = (text) => {
-    const data = {};
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    const fullText = text.replace(/\s+/g, ' ').toLowerCase();
-    
-    // Title report specific patterns
-    const patterns = {
-      price: [
-        /(?:sale|purchase|consideration)[:\s]*\$?([0-9,]+)/i,
-        /(?:deed|transfer)[^$]*\$([0-9,]+)/i,
-        /consideration[:\s]*\$?([0-9,]+)/i,
-        /(?:sold|purchase price)[:\s]*\$?([0-9,]+)/i
-      ],
-      sqft: [
-        /([0-9,]+)\s*(?:sf|sq\.?\s*ft\.?|square feet)/i,
-        /area[:\s]*([0-9,]+)/i,
-        /size[:\s]*([0-9,]+)\s*(?:sf|square)/i
-      ],
-      acreage: [
-        /([0-9]+\.?[0-9]*)\s*acres?/i,
-        /([0-9]+\.?[0-9]*)\s*ac\.?/i
-      ],
-      taxes: [
-        /(?:property tax|annual tax|real estate tax)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /tax assessment[:\s]*\$?([0-9,]+)/i,
-        /assessed value[:\s]*\$?([0-9,]+)/i
-      ],
-      zoning: [
-        /zoning[:\s]*([A-Z0-9\-]+)/i,
-        /zone[:\s]*([A-Z0-9\-]+)/i,
-        /classification[:\s]*([A-Z0-9\-]+)/i
-      ]
-    };
-
-    // Extract numerical data
-    Object.keys(patterns).forEach(key => {
-      if (key !== 'zoning') {
-        const value = extractNumberFromText(fullText, patterns[key]);
-        if (value !== null) {
-          data[key] = value;
-        }
-      }
-    });
-
-    // Extract zoning (non-numerical)
-    const zoningMatch = fullText.match(patterns.zoning[0]) || fullText.match(patterns.zoning[1]) || fullText.match(patterns.zoning[2]);
-    if (zoningMatch) {
-      data.zoning = zoningMatch[1].toUpperCase();
-    }
-
-    // Legal description extraction
-    const legalPatterns = [
-      /legal description[:\s]*([^.]{20,200})/i,
-      /lot [0-9]+[^.]*block [0-9]+[^.]*/i,
-      /section [0-9]+[^.]*township [0-9]+[^.]*/i
-    ];
-    
-    for (const pattern of legalPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        data.legalDescription = match[0].trim();
-        break;
-      }
-    }
-
-    // Property address extraction
-    const addressPatterns = [
-      /(?:property address|subject property)[:\s]*([^,\n]{10,100})/i,
-      /([0-9]+\s+[^,\n]{10,50}(?:street|st|avenue|ave|road|rd|drive|dr|boulevard|blvd|lane|ln|way|circle|cir|court|ct))/i
-    ];
-    
-    for (const pattern of addressPatterns) {
-      const match = text.match(pattern);
-      if (match) {
-        data.address = match[1].trim();
-        break;
-      }
-    }
-
-    return data;
-  };
-
-  const parseCoStarData = (text) => {
-    const data = {};
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    const fullText = text.replace(/\s+/g, ' ');
-    
-    // Enhanced CoStar patterns
-    const patterns = {
-      rent: [
-        /(?:rent|asking|rate)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /\$([0-9,]+\.?[0-9]*)\s*(?:\/sf|per sf|psf|sq\.?\s*ft\.?)/i,
-        /([0-9,]+\.?[0-9]*)\s*(?:\/sf|per sf|psf)\s*(?:\/year|annually|yr)?/i
-      ],
-      sqft: [
-        /(?:rentable|leasable|available)\s*(?:area|space)[:\s]*([0-9,]+)/i,
-        /([0-9,]+)\s*(?:sf|sq\.?\s*ft\.?|square feet)/i,
-        /(?:size|area)[:\s]*([0-9,]+)/i,
-        /([0-9,]+)\s*rsf/i
-      ],
-      cam: [
-        /(?:cam|common area maintenance)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /(?:operating expenses?|opex)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /(?:additional rent|add'l rent)[:\s]*\$?([0-9,]+\.?[0-9]*)/i
-      ],
-      taxes: [
-        /(?:property tax|real estate tax|re tax)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /(?:tax|taxes)[:\s]*\$?([0-9,]+\.?[0-9]*)/i
-      ],
-      price: [
-        /(?:sale|asking|list|price)[:\s]*\$?([0-9,]+)/i,
-        /\$([0-9,]+,?[0-9]*)\s*(?:total|purchase|sales?)/i,
-        /(?:sold|purchase price)[:\s]*\$?([0-9,]+)/i
-      ],
-      operatingExpenses: [
-        /(?:operating expenses?|opex|expenses?)[:\s]*\$?([0-9,]+\.?[0-9]*)/i,
-        /(?:total expenses?)[:\s]*\$?([0-9,]+\.?[0-9]*)/i
-      ]
-    };
-
-    // Extract data using patterns
-    Object.keys(patterns).forEach(key => {
-      const value = extractNumberFromText(fullText, patterns[key]);
-      if (value !== null) {
-        data[key] = value;
-      }
-    });
-
-    // Enhanced property type detection
-    const propertyTypes = {
-      'office': ['office', 'corporate', 'professional', 'medical office'],
-      'retail': ['retail', 'shopping', 'store', 'restaurant', 'grocery'],
-      'industrial': ['industrial', 'warehouse', 'manufacturing', 'distribution', 'flex'],
-      'multifamily': ['apartment', 'multifamily', 'residential'],
-      'medical': ['medical', 'clinic', 'hospital', 'healthcare'],
-      'mixed-use': ['mixed use', 'mixed-use']
-    };
-
-    for (const [type, keywords] of Object.entries(propertyTypes)) {
-      if (keywords.some(keyword => fullText.toLowerCase().includes(keyword))) {
-        data.propertyType = type;
-        break;
-      }
-    }
-
-    return data;
-  };
-
-  const performOCR = async (arrayBuffer) => {
-    // This is a simplified OCR implementation
-    // In production, you'd use Tesseract.js or similar
-    setUploadStatus('🔍 Performing OCR on scanned document...');
+  }, [benchmarkData.rent]);
+const handleFileUpload = async (file) => {
+    setUploadStatus('📄 Uploading to server...');
     
     try {
-      // For now, we'll simulate OCR processing
-      // Real implementation would use Tesseract.js
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const formData = new FormData();
+      formData.append('file', file);
       
-      // Return empty string to indicate OCR attempted but not implemented
-      return '';
-    } catch (error) {
-      console.error('OCR failed:', error);
-      return '';
-    }
-  };
-
-  const detectDocumentType = (text) => {
-    const lowerText = text.toLowerCase();
-    
-    // Title report indicators
-    const titleIndicators = [
-      'title report', 'preliminary report', 'title insurance', 'commitment',
-      'legal description', 'deed', 'easement', 'encumbrance', 'exception',
-      'chain of title', 'vesting', 'schedule a', 'schedule b'
-    ];
-    
-    // CoStar indicators
-    const costarIndicators = [
-      'costar', 'lease', 'rent', 'tenant', 'landlord', 'psf', 'rsf',
-      'cam', 'operating expenses', 'base rent', 'market rent'
-    ];
-    
-    const titleScore = titleIndicators.reduce((score, indicator) => 
-      score + (lowerText.includes(indicator) ? 1 : 0), 0);
-    
-    const costarScore = costarIndicators.reduce((score, indicator) => 
-      score + (lowerText.includes(indicator) ? 1 : 0), 0);
-    
-    if (titleScore > costarScore && titleScore > 2) return 'title';
-    if (costarScore > titleScore && costarScore > 2) return 'costar';
-    return 'unknown';
-  };
-
-  const handleFileUpload = async (file) => {
-    setUploadStatus('📄 Processing PDF...');
-    
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      
-      if (file.type === 'application/pdf') {
-        let fullText = '';
-        let extractedData = {};
-        let documentType = 'unknown';
-        
-        // First attempt: PDF.js text extraction
-        try {
-          const pdfjsLib = window.pdfjsLib;
-          if (!pdfjsLib) {
-            throw new Error('PDF.js not loaded. Please refresh the page.');
-          }
-          
-          setUploadStatus('📋 Extracting text from PDF...');
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
-          }
-          
-          // If no meaningful text extracted, try OCR
-          if (fullText.trim().length < 100) {
-            setUploadStatus('🔍 Document appears to be scanned. Attempting OCR...');
-            const ocrText = await performOCR(arrayBuffer);
-            fullText = ocrText || fullText;
-          }
-          
-        } catch (pdfError) {
-          console.error('PDF extraction failed:', pdfError);
-          setUploadStatus('🔍 PDF text extraction failed. Attempting OCR...');
-          fullText = await performOCR(arrayBuffer);
-        }
-        
-        // Detect document type
-        documentType = detectDocumentType(fullText);
-        setUploadStatus(`🎯 Detected ${documentType} document. Parsing data...`);
-        
-        // Parse based on document type
-        if (documentType === 'title') {
-          extractedData = parseTitleReport(fullText);
-        } else if (documentType === 'costar') {
-          extractedData = parseCoStarData(fullText);
-        } else {
-          // Try both parsers and use the one with more results
-          const titleData = parseTitleReport(fullText);
-          const costarData = parseCoStarData(fullText);
-          
-          extractedData = Object.keys(titleData).length > Object.keys(costarData).length 
-            ? { ...titleData, detectedType: 'title' }
-            : { ...costarData, detectedType: 'costar' };
-        }
-        
-        // Validate extracted data
-        const validation = validateExtractedData(extractedData, documentType);
-        
-        setParsedData({ 
-          ...extractedData, 
-          documentType, 
-          validation,
-          rawTextLength: fullText.length
-        });
-        
-        // Auto-populate form fields (only if validation passes or has only warnings)
-        if (validation.isValid || validation.errors.length === 0) {
-          if (extractedData.rent) setBenchmarkData(prev => ({ ...prev, rent: extractedData.rent.toString() }));
-          if (extractedData.sqft) setBenchmarkData(prev => ({ ...prev, sqft: extractedData.sqft.toString() }));
-          if (extractedData.cam) setBenchmarkData(prev => ({ ...prev, cam: extractedData.cam.toString() }));
-          if (extractedData.taxes) setBenchmarkData(prev => ({ ...prev, taxes: extractedData.taxes.toString() }));
-          if (extractedData.price) setBenchmarkData(prev => ({ ...prev, purchasePrice: extractedData.price.toString() }));
-          if (extractedData.operatingExpenses) setBenchmarkData(prev => ({ ...prev, operatingExpenses: extractedData.operatingExpenses.toString() }));
-          if (extractedData.propertyType) setBenchmarkData(prev => ({ ...prev, propertyType: extractedData.propertyType }));
-        }
-        
-        const fieldCount = Object.keys(extractedData).filter(key => 
-          !['documentType', 'validation', 'rawTextLength', 'detectedType'].includes(key)
-        ).length;
-        
-        if (validation.errors.length > 0) {
-          setUploadStatus(`⚠️ Parsing completed with errors: ${fieldCount} fields extracted`);
-        } else if (validation.warnings.length > 0) {
-          setUploadStatus(`✅ Parsing completed with warnings: ${fieldCount} fields extracted`);
-        } else {
-          setUploadStatus(`✅ Successfully parsed ${documentType} report: ${fieldCount} fields extracted`);
-        }
-        
-      } else {
-        setUploadStatus('❌ Please upload a PDF file');
-      }
-    } catch (error) {
-      console.error('Parsing error:', error);
-      setUploadStatus(`❌ Error parsing file: ${error.message}`);
-    }
-  };
-
-  // Financial calculation functions
-  const calculateMonthlyPayment = (loanAmount, monthlyRate, totalMonths) => {
-    if (monthlyRate === 0) return loanAmount / totalMonths;
-    return loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1);
-  };
-
-  const calculateAmortizationSchedule = (loanAmount, annualRate, loanTermYears, interestOnlyYears = 0) => {
-    const monthlyRate = annualRate / 100 / 12;
-    const totalMonths = loanTermYears * 12;
-    const ioMonths = interestOnlyYears * 12;
-    const schedule = [];
-    
-    let balance = loanAmount;
-    let monthlyPayment;
-    
-    for (let month = 1; month <= totalMonths; month++) {
-      const interestPayment = balance * monthlyRate;
-      let principalPayment = 0;
-      
-      if (month <= ioMonths) {
-        // Interest only period
-        monthlyPayment = interestPayment;
-      } else {
-        // Amortizing period
-        const remainingMonths = totalMonths - month + 1;
-        monthlyPayment = calculateMonthlyPayment(balance, monthlyRate, remainingMonths);
-        principalPayment = monthlyPayment - interestPayment;
-      }
-      
-      balance -= principalPayment;
-      
-      schedule.push({
-        month,
-        year: Math.ceil(month / 12),
-        payment: monthlyPayment,
-        principal: principalPayment,
-        interest: interestPayment,
-        balance: Math.max(0, balance)
+      const response = await fetch(`${API_BASE_URL}/parse-pdf`, {
+        method: 'POST',
+        body: formData,
       });
-    }
-    
-    return schedule;
-  };
-
-  const calculateIRR = (cashFlows) => {
-    // Newton-Raphson method for IRR calculation
-    let rate = 0.1; // Initial guess
-    const tolerance = 0.00001;
-    const maxIterations = 1000;
-    
-    for (let i = 0; i < maxIterations; i++) {
-      let npv = 0;
-      let dnpv = 0;
       
-      for (let j = 0; j < cashFlows.length; j++) {
-        const period = j;
-        npv += cashFlows[j] / Math.pow(1 + rate, period);
-        dnpv += -period * cashFlows[j] / Math.pow(1 + rate, period + 1);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to parse PDF');
       }
       
-      if (Math.abs(npv) < tolerance) return rate * 100;
+      const extractedData = await response.json();
+      setParsedData(extractedData);
       
-      if (dnpv === 0) break;
-      rate = rate - npv / dnpv;
+      const newAutoFilled = new Set();
       
-      if (rate < -0.99) rate = -0.99; // Prevent extreme negative rates
+      if (extractedData.rent) {
+        setBenchmarkData(prev => ({ ...prev, rent: extractedData.rent.toString() }));
+        newAutoFilled.add('rent');
+      }
+      if (extractedData.sqft) {
+        setBenchmarkData(prev => ({ ...prev, sqft: extractedData.sqft.toString() }));
+        newAutoFilled.add('sqft');
+      }
+      if (extractedData.cam) {
+        setBenchmarkData(prev => ({ ...prev, cam: extractedData.cam.toString() }));
+        newAutoFilled.add('cam');
+      }
+      if (extractedData.taxes) {
+        setBenchmarkData(prev => ({ ...prev, taxes: extractedData.taxes.toString() }));
+        newAutoFilled.add('taxes');
+      }
+      if (extractedData.price) {
+        setBenchmarkData(prev => ({ ...prev, purchasePrice: extractedData.price.toString() }));
+        newAutoFilled.add('purchasePrice');
+      }
+      if (extractedData.operatingExpenses) {
+        setBenchmarkData(prev => ({ ...prev, operatingExpenses: extractedData.operatingExpenses.toString() }));
+        newAutoFilled.add('operatingExpenses');
+      }
+      if (extractedData.propertyType) {
+        setBenchmarkData(prev => ({ ...prev, propertyType: extractedData.propertyType }));
+        newAutoFilled.add('propertyType');
+      }
+      
+      setAutoFilledFields(newAutoFilled);
+      
+      const fieldCount = Object.keys(extractedData).filter(key => 
+        !['documentType', 'textLength', 'validation', 'textSample'].includes(key) && extractedData[key] != null
+      ).length;
+      
+      setUploadStatus(`✅ Successfully parsed ${extractedData.documentType || 'document'}: ${fieldCount} fields extracted`);
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadStatus(`❌ Error: ${error.message}`);
     }
-    
-    return rate * 100;
   };
-
-  const calculateMetrics = () => {
-    const results = {};
+const calculateMetrics = async () => {
+    setUploadStatus('🔢 Running financial analysis...');
     
-    ['conservative', 'base', 'optimistic'].forEach(scenario => {
-      const purchasePrice = parseFloat(benchmarkData.purchasePrice) || 1000000;
-      const rent = parseFloat(scenarios[scenario].rent) || parseFloat(benchmarkData.rent) || 25;
-      const sqft = parseFloat(benchmarkData.sqft) || 10000;
-      const downPayment = parseFloat(scenarios[scenario].downPayment) || 25;
-      const interestRate = parseFloat(scenarios[scenario].interestRate) || 5;
-      const appreciation = parseFloat(scenarios[scenario].appreciation) || 3;
-      const holdPeriod = parseInt(generalParams.holdPeriod) || 10;
-      const loanTerm = parseInt(generalParams.loanTerm) || 25;
-      const interestOnlyPeriod = parseInt(generalParams.interestOnlyPeriod) || 2;
-      
-      // Basic calculations
-      const annualRent = rent * sqft;
-      const loanAmount = purchasePrice * (1 - downPayment / 100);
-      const downPaymentAmount = purchasePrice * (downPayment / 100);
-      const operatingExpenses = parseFloat(benchmarkData.operatingExpenses) || annualRent * 0.35;
-      const noi = annualRent - operatingExpenses;
-      
-      // Generate amortization schedule
-      const amortSchedule = calculateAmortizationSchedule(loanAmount, interestRate, loanTerm, interestOnlyPeriod);
-      
-      // Calculate monthly and annual metrics
-      const monthlyNOI = noi / 12;
-      const annualCashFlows = [];
-      const monthlyCashFlows = [];
-      let totalPrincipalPaydown = 0;
-      
-      // Build cash flow projections
-      for (let year = 0; year < holdPeriod; year++) {
-        let yearlyDebtService = 0;
-        let yearlyPrincipal = 0;
-        
-        for (let month = 1; month <= 12; month++) {
-          const scheduleIndex = year * 12 + month - 1;
-          if (scheduleIndex < amortSchedule.length) {
-            yearlyDebtService += amortSchedule[scheduleIndex].payment;
-            yearlyPrincipal += amortSchedule[scheduleIndex].principal;
+    try {
+      const requestData = {
+        general: {
+          purchasePrice: parseFloat(benchmarkData.purchasePrice) || 1000000,
+          sqft: parseFloat(benchmarkData.sqft) || 10000,
+          cam: parseFloat(benchmarkData.cam) || 5,
+          taxes: parseFloat(benchmarkData.taxes) || 2,
+          monthlyOperatingExpenses: parseFloat(generalParams.monthlyOperatingExpenses) || 0,
+          holdPeriod: parseInt(generalParams.holdPeriod) || 10,
+          loanTerm: parseInt(generalParams.loanTerm) || 25,
+          interestOnlyPeriod: parseInt(generalParams.interestOnlyPeriod) || 2
+        },
+        scenarios: {
+          conservative: {
+            rent: parseFloat(scenarios.conservative.rent) || parseFloat(benchmarkData.rent) * 0.9 || 22.5,
+            downPayment: parseFloat(scenarios.conservative.downPayment) || 30,
+            interestRate: parseFloat(scenarios.conservative.interestRate) || 6.5,
+            appreciation: parseFloat(scenarios.conservative.appreciation) || 2
+          },
+          base: {
+            rent: parseFloat(scenarios.base.rent) || parseFloat(benchmarkData.rent) || 25,
+            downPayment: parseFloat(scenarios.base.downPayment) || 25,
+            interestRate: parseFloat(scenarios.base.interestRate) || 5.5,
+            appreciation: parseFloat(scenarios.base.appreciation) || 3
+          },
+          optimistic: {
+            rent: parseFloat(scenarios.optimistic.rent) || parseFloat(benchmarkData.rent) * 1.1 || 27.5,
+            downPayment: parseFloat(scenarios.optimistic.downPayment) || 20,
+            interestRate: parseFloat(scenarios.optimistic.interestRate) || 4.5,
+            appreciation: parseFloat(scenarios.optimistic.appreciation) || 4
           }
         }
-        
-        // Apply rent growth
-        const currentYearRent = annualRent * Math.pow(1.025, year); // 2.5% annual rent growth
-        const currentYearNOI = currentYearRent - operatingExpenses;
-        const yearlyNetCashFlow = currentYearNOI - yearlyDebtService;
-        
-        annualCashFlows.push(yearlyNetCashFlow);
-        totalPrincipalPaydown += yearlyPrincipal;
-      }
-      
-      // Calculate sale proceeds
-      const futureValue = purchasePrice * Math.pow(1 + appreciation / 100, holdPeriod);
-      const remainingLoanBalance = amortSchedule[Math.min(holdPeriod * 12 - 1, amortSchedule.length - 1)]?.balance || 0;
-      const saleProceeds = futureValue - remainingLoanBalance;
-      
-      // Build IRR cash flow array (initial investment negative, then annual cash flows, final year includes sale)
-      const irrCashFlows = [-downPaymentAmount, ...annualCashFlows];
-      if (irrCashFlows.length > 1) {
-        irrCashFlows[irrCashFlows.length - 1] += saleProceeds;
-      }
-      
-      // Calculate metrics
-      const capRate = (noi / purchasePrice) * 100;
-      const averageAnnualCashFlow = annualCashFlows.reduce((a, b) => a + b, 0) / annualCashFlows.length;
-      const cocReturn = (averageAnnualCashFlow / downPaymentAmount) * 100;
-      const irr = calculateIRR(irrCashFlows);
-      const totalReturn = annualCashFlows.reduce((a, b) => a + b, 0) + (futureValue - purchasePrice) + totalPrincipalPaydown;
-      const totalEquityMultiple = (downPaymentAmount + totalReturn) / downPaymentAmount;
-      
-      // Debt service coverage ratio
-      const dscr = noi / (amortSchedule.slice(0, 12).reduce((sum, month) => sum + month.payment, 0));
-
-      results[scenario] = {
-        capRate: capRate.toFixed(2),
-        cashFlow: averageAnnualCashFlow.toFixed(0),
-        cocReturn: cocReturn.toFixed(2),
-        irr: irr.toFixed(2),
-        futureValue: futureValue.toFixed(0),
-        equityGain: (futureValue - purchasePrice).toFixed(0),
-        totalReturn: totalReturn.toFixed(0),
-        equityMultiple: totalEquityMultiple.toFixed(2),
-        dscr: dscr.toFixed(2),
-        principalPaydown: totalPrincipalPaydown.toFixed(0),
-        saleProceeds: saleProceeds.toFixed(0),
-        amortSchedule: amortSchedule.slice(0, holdPeriod * 12),
-        annualCashFlows: annualCashFlows,
-        irrCashFlows: irrCashFlows
       };
-    });
-    
-    setResults(results);
-    setActiveTab('results');
+      
+      const response = await fetch(`${API_BASE_URL}/calculate-metrics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to calculate metrics');
+      }
+      
+      const calculatedResults = await response.json();
+      setResults(calculatedResults);
+      setActiveTab('results');
+      setUploadStatus('✅ Analysis complete!');
+      
+    } catch (error) {
+      console.error('Calculation error:', error);
+      setUploadStatus(`❌ Calculation error: ${error.message}`);
+    }
   };
-
-  const generateRentSensitivity = () => {
+const generateRentSensitivity = () => {
     if (!results) return [];
     
     const variations = [-10, -5, 0, 5, 10];
@@ -619,22 +447,14 @@ const CREAnalyzer = () => {
           const appreciation = parseFloat(scenarios[scenario].appreciation) || 3;
           const downPaymentAmount = purchasePrice * (downPayment / 100);
           
-          // Current property value
           const currentValue = purchasePrice * Math.pow(1 + appreciation / 100, year);
-          
-          // Remaining loan balance
-          const monthIndex = Math.min(year * 12 - 1, results[scenario].amortSchedule.length - 1);
           const remainingBalance = year === 0 ? purchasePrice * (1 - downPayment / 100) : 
-            (results[scenario].amortSchedule[monthIndex]?.balance || 0);
+            (results[scenario].amortSchedule && results[scenario].amortSchedule[Math.min(year * 12 - 1, results[scenario].amortSchedule.length - 1)]?.balance || 0);
           
-          // Cumulative cash flow
           const cumulativeCashFlow = year === 0 ? 0 : 
-            results[scenario].annualCashFlows.slice(0, year).reduce((sum, cf) => sum + cf, 0);
+            (results[scenario].annualCashFlows ? results[scenario].annualCashFlows.slice(0, year).reduce((sum, cf) => sum + cf, 0) : 0);
           
-          // Net equity (property value - loan balance)
           const equity = currentValue - remainingBalance;
-          
-          // Total profit (equity above initial investment + cumulative cash flow)
           const totalProfit = (equity - downPaymentAmount) + cumulativeCashFlow;
           
           dataPoint[`${scenario}Equity`] = equity;
@@ -648,469 +468,458 @@ const CREAnalyzer = () => {
     
     return data;
   };
-
-  const generateFinancialBreakdown = (scenario) => {
-    if (!results || !results[scenario]) return [];
-    
-    const totalCashFlow = results[scenario].annualCashFlows.reduce((sum, cf) => sum + cf, 0);
-    const principalPaydown = parseFloat(results[scenario].principalPaydown);
-    const appreciationGain = parseFloat(results[scenario].equityGain);
-    
-    return [
-      { name: 'Cash Flow', value: Math.abs(totalCashFlow), color: '#2563eb' },
-      { name: 'Principal Paydown', value: principalPaydown, color: '#16a34a' },
-      { name: 'Appreciation', value: appreciationGain, color: '#dc2626' }
-    ];
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-blue-600 text-white p-6">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <TrendingUp className="w-6 h-6" />
-              CRE Investment Analyzer
-            </h1>
-            <p className="text-blue-100 mt-2">Multi-scenario commercial real estate investment analysis</p>
+return (
+    <div className="app-container">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', position: 'relative', zIndex: 1 }}>
+        <div className="glass-card" style={{ marginBottom: '24px' }}>
+          {/* Premium Header */}
+          <div className="hero-gradient" style={{ padding: '48px 32px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
+                <Building className="floating-icon" style={{ width: '48px', height: '48px', color: '#3b82f6' }} />
+                <h1 className="logo-text" style={{ fontSize: '3rem', lineHeight: '1.2' }}>
+                  Leasr Analyze
+                </h1>
+              </div>
+              <p className="subtitle-text" style={{ fontSize: '1.25rem', maxWidth: '600px', margin: '0 auto' }}>
+                AI-powered commercial real estate investment analysis with multi-scenario modeling and market intelligence
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <DollarSign style={{ width: '20px', height: '20px', color: '#10b981' }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>IRR Analysis</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BarChart3 style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>Market Intelligence</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calculator style={{ width: '20px', height: '20px', color: '#a78bfa' }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '14px' }}>Multi-Scenario</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex border-b">
-            {[
-              { id: 'input', label: 'Input Data', icon: FileText },
-              { id: 'results', label: 'Analysis Results', icon: Calculator }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
-                  activeTab === tab.id 
-                    ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
+          {/* Premium Navigation */}
+          <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              {[
+                { id: 'input', label: 'Deal Input', icon: FileText },
+                { id: 'results', label: 'Analysis Results', icon: TrendingUp }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <tab.icon style={{ width: '18px', height: '18px' }} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div style={{ padding: '32px' }}>
             {activeTab === 'input' && (
-              <div className="space-y-8">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                 {/* File Upload Section */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors">
-                  <div className="text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600 mb-2">Upload CoStar lease comp or title report</p>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) handleFileUpload(file);
-                      }}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors inline-block"
-                    >
-                      Choose PDF File
-                    </label>
-                    <p className="text-sm text-gray-500 mt-2">Or fill in the manual inputs below</p>
-                    {uploadStatus && (
-                      <div className={`mt-3 p-2 rounded ${
-                        uploadStatus.includes('✅') ? 'bg-green-100 text-green-700' : 
-                        uploadStatus.includes('❌') ? 'bg-red-100 text-red-700' : 
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {uploadStatus}
+                <div className="upload-zone" style={{ padding: '48px 32px', textAlign: 'center' }}>
+                  <Upload style={{ width: '48px', height: '48px', color: 'rgba(255, 255, 255, 0.6)', margin: '0 auto 16px' }} />
+                  <h3 style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '1.25rem', fontWeight: '600', marginBottom: '8px' }}>
+                    Upload CoStar or Title Report
+                  </h3>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginBottom: '24px' }}>
+                    AI-powered parsing of PDF documents for instant data extraction
+                  </p>
+                  
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) handleFileUpload(file);
+                    }}
+                    style={{ display: 'none' }}
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="premium-button"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Upload style={{ width: '20px', height: '20px' }} />
+                    Choose PDF File
+                  </label>
+                  
+                  {uploadStatus && (
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      backgroundColor: uploadStatus.includes('✅') ? 'rgba(16, 185, 129, 0.2)' : 
+                                     uploadStatus.includes('❌') ? 'rgba(239, 68, 68, 0.2)' : 
+                                     'rgba(59, 130, 246, 0.2)',
+                      border: `1px solid ${uploadStatus.includes('✅') ? 'rgba(16, 185, 129, 0.3)' : 
+                                         uploadStatus.includes('❌') ? 'rgba(239, 68, 68, 0.3)' : 
+                                         'rgba(59, 130, 246, 0.3)'}`,
+                      color: uploadStatus.includes('✅') ? '#10b981' : 
+                             uploadStatus.includes('❌') ? '#ef4444' : '#3b82f6'
+                    }}>
+                      {uploadStatus}
+                    </div>
+                  )}
+                  
+                  {parsedData && (
+                    <div className="form-section" style={{ marginTop: '24px', padding: '24px', textAlign: 'left' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <h4 className="section-title">Extracted Data</h4>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          backgroundColor: parsedData.documentType === 'title' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                          color: parsedData.documentType === 'title' ? '#10b981' : '#3b82f6',
+                          border: `1px solid ${parsedData.documentType === 'title' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                        }}>
+                          {parsedData.documentType?.toUpperCase() || 'UNKNOWN'} REPORT
+                        </span>
                       </div>
-                    )}
-                    {parsedData && (
-                      <div className="mt-3 p-3 bg-gray-100 rounded-lg text-left text-sm">
-                        <div className="flex justify-between items-center mb-2">
-                          <h4 className="font-semibold">Extracted Data</h4>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            parsedData.documentType === 'title' ? 'bg-purple-100 text-purple-700' :
-                            parsedData.documentType === 'costar' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {parsedData.documentType.toUpperCase()} REPORT
-                          </span>
-                        </div>
-                        
-                        {/* Validation Results */}
-                        {parsedData.validation && (
-                          <div className="mb-3">
-                            {parsedData.validation.errors.length > 0 && (
-                              <div className="mb-2">
-                                <div className="text-red-600 font-medium text-xs mb-1">❌ ERRORS:</div>
-                                {parsedData.validation.errors.map((error, idx) => (
-                                  <div key={idx} className="text-red-600 text-xs ml-2">• {error}</div>
-                                ))}
-                              </div>
+                      
+                      {/* Location Information */}
+                      {(parsedData.city || parsedData.state || parsedData.county) && (
+                        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                          <div style={{ color: '#3b82f6', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>📍 LOCATION DATA:</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '12px' }}>
+                            {parsedData.city && (
+                              <div><span className="label-text">City:</span> <span className="value-text">{parsedData.city}</span></div>
                             )}
-                            
-                            {parsedData.validation.warnings.length > 0 && (
-                              <div className="mb-2">
-                                <div className="text-yellow-600 font-medium text-xs mb-1">⚠️ WARNINGS:</div>
-                                {parsedData.validation.warnings.map((warning, idx) => (
-                                  <div key={idx} className="text-yellow-600 text-xs ml-2">• {warning}</div>
-                                ))}
-                              </div>
+                            {parsedData.state && (
+                              <div><span className="label-text">State:</span> <span className="value-text">{parsedData.state}</span></div>
+                            )}
+                            {parsedData.county && (
+                              <div><span className="label-text">County:</span> <span className="value-text">{parsedData.county}</span></div>
                             )}
                           </div>
-                        )}
-                        
-                        {/* Extracted Fields */}
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {Object.entries(parsedData).filter(([key, value]) => 
-                            !['documentType', 'validation', 'rawTextLength', 'detectedType'].includes(key) && 
-                            value !== null && value !== undefined
-                          ).map(([key, value]) => (
-                            <div key={key} className="flex justify-between">
-                              <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                              <span>
-                                {typeof value === 'number' && ['rent', 'cam', 'taxes'].includes(key) ? `${value}` :
-                                 typeof value === 'number' && ['price', 'operatingExpenses'].includes(key) ? `${value.toLocaleString()}` :
-                                 typeof value === 'number' && key === 'sqft' ? `${value.toLocaleString()} sf` :
-                                 typeof value === 'number' && key === 'acreage' ? `${value} acres` :
-                                 typeof value === 'string' && value.length > 30 ? `${value.substring(0, 30)}...` :
-                                 value.toString()}
-                              </span>
+                        </div>
+                      )}
+                      
+                      {/* Price Note for Transparency */}
+                      {parsedData.priceNote && (
+                        <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                          <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '500' }}>{parsedData.priceNote}</div>
+                        </div>
+                      )}
+                      
+                      {/* Validation Results */}
+                      {parsedData.validation && (
+                        <div style={{ marginBottom: '16px' }}>
+                          {parsedData.validation.errors?.length > 0 && (
+                            <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px' }}>
+                              <div style={{ color: '#ef4444', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>❌ ERRORS:</div>
+                              {parsedData.validation.errors.map((error, idx) => (
+                                <div key={idx} style={{ color: '#ef4444', fontSize: '12px', marginLeft: '16px' }}>• {error}</div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+                          
+                          {parsedData.validation.warnings?.length > 0 && (
+                            <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px' }}>
+                              <div style={{ color: '#f59e0b', fontWeight: '600', fontSize: '12px', marginBottom: '8px' }}>⚠️ WARNINGS:</div>
+                              {parsedData.validation.warnings.map((warning, idx) => (
+                                <div key={idx} style={{ color: '#f59e0b', fontSize: '12px', marginLeft: '16px' }}>• {warning}</div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        
-                        {parsedData.rawTextLength && (
-                          <div className="mt-2 pt-2 border-t text-xs text-gray-500">
-                            📄 Extracted {parsedData.rawTextLength.toLocaleString()} characters from document
+                      )}
+                      
+                      {/* Extracted Fields */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px' }}>
+                        {Object.entries(parsedData).filter(([key, value]) => 
+                          !['documentType', 'validation', 'rawTextLength', 'detectedType', 'textLength', 'textSample', 'city', 'state', 'county', 'priceNote'].includes(key) && 
+                          value !== null && value !== undefined
+                        ).map(([key, value]) => (
+                          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            <span className="label-text" style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                            <span className="value-text">
+                              {typeof value === 'number' && ['rent', 'cam', 'taxes'].includes(key) ? `$${value}` :
+                               typeof value === 'number' && ['price', 'operatingExpenses'].includes(key) ? `$${value.toLocaleString()}` :
+                               typeof value === 'number' && key === 'sqft' ? `${value.toLocaleString()} sf` :
+                               typeof value === 'number' && key === 'acreage' ? `${value} acres` :
+                               typeof value === 'string' && value.length > 30 ? `${value.substring(0, 30)}...` :
+                               value.toString()}
+                            </span>
                           </div>
-                        )}
+                        ))}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-
                 {/* Benchmark Data */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Benchmark Data</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Rent ($/sqft)</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.rent}
-                        onChange={(e) => handleBenchmarkChange('rent', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="25.00"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CAM ($/sqft)</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.cam}
-                        onChange={(e) => handleBenchmarkChange('cam', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="5.00"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Taxes ($/sqft)</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.taxes}
-                        onChange={(e) => handleBenchmarkChange('taxes', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="3.50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Operating Expenses</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.operatingExpenses}
-                        onChange={(e) => handleBenchmarkChange('operatingExpenses', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="75000"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Square Feet</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.sqft}
-                        onChange={(e) => handleBenchmarkChange('sqft', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="10000"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price</label>
-                      <input
-                        type="number"
-                        value={benchmarkData.purchasePrice}
-                        onChange={(e) => handleBenchmarkChange('purchasePrice', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="1000000"
-                      />
-                    </div>
+                <div className="form-section" style={{ padding: '32px' }}>
+                  <h3 className="section-title" style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Benchmark Data</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+                    {[
+                      { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
+                      { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00' },
+                      { key: 'taxes', label: 'Taxes ($/sqft)', placeholder: '3.50' },
+                      { key: 'sqft', label: 'Square Feet', placeholder: '10000' },
+                      { key: 'purchasePrice', label: 'Purchase Price', placeholder: '1000000' },
+                      { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000' }
+                    ].map(field => (
+                      <div key={field.key}>
+                        <label className="label-text" style={{ display: 'block', marginBottom: '8px' }}>
+                          {field.label}
+                          {autoFilledFields.has(field.key) && (
+                            <span style={{ marginLeft: '8px', fontSize: '10px', color: '#10b981', fontWeight: '500' }}>
+                              ✨ AUTO-FILLED
+                            </span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          value={benchmarkData[field.key]}
+                          onChange={(e) => handleBenchmarkChange(field.key, e.target.value)}
+                          className="input-field"
+                          style={{
+                            backgroundColor: autoFilledFields.has(field.key) 
+                              ? 'rgba(16, 185, 129, 0.15)' 
+                              : 'rgba(255, 255, 255, 0.08)',
+                            borderColor: autoFilledFields.has(field.key) 
+                              ? 'rgba(16, 185, 129, 0.3)' 
+                              : 'rgba(255, 255, 255, 0.15)'
+                          }}
+                          placeholder={field.placeholder}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* General Parameters */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">General Parameters</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-section" style={{ padding: '32px' }}>
+                  <h3 className="section-title" style={{ fontSize: '1.5rem', marginBottom: '24px' }}>General Parameters</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hold Period (years)</label>
+                      <label className="label-text" style={{ display: 'block', marginBottom: '8px' }}>Hold Period (years)</label>
                       <input
                         type="number"
                         value={generalParams.holdPeriod}
                         onChange={(e) => handleGeneralParamsChange('holdPeriod', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-field"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Loan Term (years)</label>
+                      <label className="label-text" style={{ display: 'block', marginBottom: '8px' }}>Loan Term (years)</label>
                       <input
                         type="number"
                         value={generalParams.loanTerm}
                         onChange={(e) => handleGeneralParamsChange('loanTerm', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="input-field"
                       />
                     </div>
                   </div>
                 </div>
-
-                {/* Scenario Parameters */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Scenario Analysis</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3">Parameter</th>
-                          <th className="text-center py-2 px-3 text-red-600">Conservative</th>
-                          <th className="text-center py-2 px-3 text-blue-600">Base</th>
-                          <th className="text-center py-2 px-3 text-green-600">Optimistic</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {['rent', 'downPayment', 'interestRate', 'appreciation'].map(param => (
-                          <tr key={param} className="border-b">
-                            <td className="py-2 px-3 font-medium capitalize">
-                              {param === 'downPayment' ? 'Down Payment (%)' : 
-                               param === 'interestRate' ? 'Interest Rate (%)' :
-                               param === 'appreciation' ? 'Appreciation (%)' :
-                               'Rent ($/sqft)'}
-                            </td>
-                            {['conservative', 'base', 'optimistic'].map(scenario => (
-                              <td key={scenario} className="py-2 px-3">
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={scenarios[scenario][param]}
-                                  onChange={(e) => handleScenarioChange(scenario, param, e.target.value)}
-                                  className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder={
-                                    param === 'rent' ? (scenario === 'conservative' ? '23' : scenario === 'base' ? '25' : '28') :
-                                    param === 'downPayment' ? (scenario === 'conservative' ? '30' : scenario === 'base' ? '25' : '20') :
-                                    param === 'interestRate' ? (scenario === 'conservative' ? '6.5' : scenario === 'base' ? '5.5' : '4.5') :
-                                    (scenario === 'conservative' ? '2' : scenario === 'base' ? '3' : '4')
-                                  }
-                                />
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Analyze Button */}
-                <div className="text-center">
-                  <button
-                    onClick={calculateMetrics}
-                    className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    <Calculator className="w-5 h-5" />
-                    Analyze the Deal
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'results' && results && (
-              <div className="space-y-8">
-                {/* Key Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {['conservative', 'base', 'optimistic'].map(scenario => (
-                    <div key={scenario} className="bg-gray-50 rounded-lg p-6">
-                      <h3 className={`text-lg font-semibold mb-4 capitalize ${
-                        scenario === 'conservative' ? 'text-red-600' : 
-                        scenario === 'base' ? 'text-blue-600' : 'text-green-600'
-                      }`}>
-                        {scenario} Scenario
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Cap Rate:</span>
-                          <span className="font-semibold">{results[scenario].capRate}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Cash Flow:</span>
-                          <span className="font-semibold">${parseInt(results[scenario].cashFlow).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">CoC Return:</span>
-                          <span className="font-semibold">{results[scenario].cocReturn}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">IRR:</span>
-                          <span className="font-semibold">{results[scenario].irr}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">DSCR:</span>
-                          <span className="font-semibold">{results[scenario].dscr}x</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Equity Multiple:</span>
-                          <span className="font-semibold">{results[scenario].equityMultiple}x</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Principal Paydown:</span>
-                          <span className="font-semibold">${parseInt(results[scenario].principalPaydown).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Rent Sensitivity Analysis */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">IRR Sensitivity to Rent Changes</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3">Rent Change</th>
-                          <th className="text-center py-2 px-3 text-red-600">Conservative IRR</th>
-                          <th className="text-center py-2 px-3 text-blue-600">Base IRR</th>
-                          <th className="text-center py-2 px-3 text-green-600">Optimistic IRR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {generateRentSensitivity().map((row, index) => (
-                          <tr key={index} className="border-b">
-                            <td className="py-2 px-3 font-medium">{row.rentChange}</td>
-                            <td className="py-2 px-3 text-center">{row.conservative}%</td>
-                            <td className="py-2 px-3 text-center">{row.base}%</td>
-                            <td className="py-2 px-3 text-center">{row.optimistic}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Financial Breakdown Donut Charts */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Return Sources Breakdown</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+{/* Scenario Parameters */}
+                <div className="form-section" style={{ padding: '32px' }}>
+                  <h3 className="section-title" style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Scenario Analysis</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                     {['conservative', 'base', 'optimistic'].map(scenario => (
-                      <div key={scenario} className="text-center">
-                        <h4 className={`font-semibold mb-2 capitalize ${
-                          scenario === 'conservative' ? 'text-red-600' : 
-                          scenario === 'base' ? 'text-blue-600' : 'text-green-600'
-                        }`}>
+                      <div key={scenario} className="form-section" style={{ padding: '24px' }}>
+                        <h4 style={{ 
+                          fontSize: '1.1rem', 
+                          fontWeight: '600', 
+                          marginBottom: '16px', 
+                          textTransform: 'capitalize',
+                          color: scenario === 'conservative' ? '#ef4444' : scenario === 'base' ? '#3b82f6' : '#10b981'
+                        }}>
                           {scenario}
                         </h4>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={generateFinancialBreakdown(scenario)}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={40}
-                                outerRadius={80}
-                                dataKey="value"
-                                startAngle={90}
-                                endAngle={-270}
-                              >
-                                {generateFinancialBreakdown(scenario).map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => [`${parseInt(value).toLocaleString()}`, '']} />
-                              <Legend />
-                            </PieChart>
-                          </ResponsiveContainer>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {[
+                            { key: 'rent', label: 'Rent ($/sqft)', placeholder: scenario === 'conservative' ? '23' : scenario === 'base' ? '25' : '28' },
+                            { key: 'downPayment', label: 'Down Payment (%)', placeholder: scenario === 'conservative' ? '30' : scenario === 'base' ? '25' : '20' },
+                            { key: 'interestRate', label: 'Interest Rate (%)', placeholder: scenario === 'conservative' ? '6.5' : scenario === 'base' ? '5.5' : '4.5' },
+                            { key: 'appreciation', label: 'Appreciation (%)', placeholder: scenario === 'conservative' ? '2' : scenario === 'base' ? '3' : '4' }
+                          ].map(param => (
+                            <div key={param.key}>
+                              <label className="label-text" style={{ display: 'block', marginBottom: '4px' }}>
+                                {param.label}
+                                {autoFilledFields.has(`${scenario}-${param.key}`) && (
+                                  <span style={{ marginLeft: '8px', fontSize: '10px', color: '#10b981', fontWeight: '500' }}>
+                                    ✨ AUTO-FILLED
+                                  </span>
+                                )}
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={scenarios[scenario][param.key]}
+                                onChange={(e) => handleScenarioChange(scenario, param.key, e.target.value)}
+                                className="input-field"
+                                style={{
+                                  backgroundColor: autoFilledFields.has(`${scenario}-${param.key}`) 
+                                    ? 'rgba(16, 185, 129, 0.15)' 
+                                    : 'rgba(255, 255, 255, 0.08)',
+                                  borderColor: autoFilledFields.has(`${scenario}-${param.key}`) 
+                                    ? 'rgba(16, 185, 129, 0.3)' 
+                                    : 'rgba(255, 255, 255, 0.15)'
+                                }}
+                                placeholder={param.placeholder}
+                              />
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Analyze Button */}
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    onClick={calculateMetrics}
+                    className="premium-button"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '18px', padding: '20px 40px' }}
+                  >
+                    <Calculator style={{ width: '24px', height: '24px' }} />
+                    Analyze the Deal
+                  </button>
+                </div>
+              </div>
+            )}
+{activeTab === 'results' && results && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                {/* Key Metrics */}
+                <div>
+                  <h3 className="section-title" style={{ fontSize: '1.5rem', marginBottom: '24px', textAlign: 'center' }}>Investment Analysis Results</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    {['conservative', 'base', 'optimistic'].map(scenario => (
+                      <div key={scenario} className={`metric-card ${scenario}`} style={{ padding: '24px' }}>
+                        <h4 style={{ 
+                          fontSize: '1.25rem', 
+                          fontWeight: '700', 
+                          marginBottom: '20px', 
+                          textTransform: 'capitalize',
+                          color: scenario === 'conservative' ? '#ef4444' : scenario === 'base' ? '#3b82f6' : '#10b981'
+                        }}>
+                          {scenario} Scenario
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="label-text">Cap Rate:</span>
+                            <span className="value-text" style={{ fontSize: '1.1rem' }}>{results[scenario].capRate}%</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="label-text">Cash Flow:</span>
+                            <span className="value-text" style={{ fontSize: '1.1rem' }}>${parseInt(results[scenario].cashFlow).toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="label-text">CoC Return:</span>
+                            <span className="value-text" style={{ fontSize: '1.1rem' }}>{results[scenario].cocReturn}%</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="label-text">IRR:</span>
+                            <span className="value-text" style={{ fontSize: '1.1rem', fontWeight: '700' }}>{results[scenario].irr}%</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="label-text">Future Value:</span>
+                            <span className="value-text" style={{ fontSize: '1.1rem' }}>${parseInt(results[scenario].futureValue).toLocaleString()}</span>
+                          </div>
+                          {results[scenario].dscr && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span className="label-text">DSCR:</span>
+                              <span className="value-text" style={{ fontSize: '1.1rem' }}>{results[scenario].dscr}x</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {/* Time Series Chart */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Investment Performance Over Time</h3>
-                  <div className="h-96">
+                <div style={{ background: 'rgba(255, 255, 255, 0.04)', borderRadius: '16px', padding: '24px' }}>
+                  <h3 className="section-title" style={{ fontSize: '1.25rem', marginBottom: '20px' }}>Investment Performance Over Time (All Scenarios)</h3>
+                  <div style={{ marginBottom: '16px', fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    📊 Solid lines show equity growth, dashed lines show cumulative cash flow for each scenario
+                  </div>
+                  <div style={{ height: '400px' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={generateTimeSeriesData()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${parseInt(value).toLocaleString()}`, '']} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                        <XAxis 
+                          dataKey="year" 
+                          stroke="rgba(255, 255, 255, 0.7)"
+                          style={{ fontSize: '12px' }}
+                          label={{ value: 'Years', position: 'insideBottom', offset: -5, style: { fill: 'rgba(255, 255, 255, 0.7)' } }}
+                        />
+                        <YAxis 
+                          stroke="rgba(255, 255, 255, 0.7)"
+                          style={{ fontSize: '12px' }}
+                          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+                          label={{ value: 'Value ($)', angle: -90, position: 'insideLeft', style: { fill: 'rgba(255, 255, 255, 0.7)' } }}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            `$${parseInt(value).toLocaleString()}`, 
+                            name.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase())
+                          ]}
+                          contentStyle={{
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '8px',
+                            color: 'white'
+                          }}
+                        />
                         <Legend />
-                        <Line type="monotone" dataKey="conservativeEquity" stroke="#dc2626" name="Conservative Equity" />
-                        <Line type="monotone" dataKey="baseEquity" stroke="#2563eb" name="Base Equity" />
-                        <Line type="monotone" dataKey="optimisticEquity" stroke="#16a34a" name="Optimistic Equity" />
-                        <Line type="monotone" dataKey="conservativeCashFlow" stroke="#dc2626" strokeDasharray="5 5" name="Conservative Cash Flow" />
-                        <Line type="monotone" dataKey="baseCashFlow" stroke="#2563eb" strokeDasharray="5 5" name="Base Cash Flow" />
-                        <Line type="monotone" dataKey="optimisticCashFlow" stroke="#16a34a" strokeDasharray="5 5" name="Optimistic Cash Flow" />
+                        <Line type="monotone" dataKey="conservativeEquity" stroke="#ef4444" strokeWidth={2} name="Conservative Equity" />
+                        <Line type="monotone" dataKey="baseEquity" stroke="#3b82f6" strokeWidth={2} name="Base Equity" />
+                        <Line type="monotone" dataKey="optimisticEquity" stroke="#10b981" strokeWidth={2} name="Optimistic Equity" />
+                        <Line type="monotone" dataKey="conservativeCashFlow" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" name="Conservative Cash Flow" />
+                        <Line type="monotone" dataKey="baseCashFlow" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" name="Base Cash Flow" />
+                        <Line type="monotone" dataKey="optimisticCashFlow" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" name="Optimistic Cash Flow" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-
-                {/* Amortization Schedule Preview */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Amortization Schedule (First 24 Months - Base Scenario)</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-3">Month</th>
-                          <th className="text-right py-2 px-3">Payment</th>
-                          <th className="text-right py-2 px-3">Principal</th>
-                          <th className="text-right py-2 px-3">Interest</th>
-                          <th className="text-right py-2 px-3">Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {results?.base?.amortSchedule?.slice(0, 24).map((month, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-100">
-                            <td className="py-2 px-3">{month.month}</td>
-                            <td className="py-2 px-3 text-right">${month.payment.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-                            <td className="py-2 px-3 text-right">${month.principal.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-                            <td className="py-2 px-3 text-right">${month.interest.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
-                            <td className="py-2 px-3 text-right">${month.balance.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
+{/* Rent Sensitivity Analysis */}
+                {results && (
+                  <div className="form-section" style={{ padding: '32px' }}>
+                    <h3 className="section-title" style={{ fontSize: '1.25rem', marginBottom: '20px' }}>IRR Sensitivity to Rent Changes</h3>
+                    <div style={{ marginBottom: '16px', fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                      📈 Shows how IRR changes with different rent assumptions across all scenarios
+                      <span title="This table shows a simple proportional estimate of IRR based on rent changes. For true IRR recalculation, a full financial model is required." style={{ marginLeft: '8px', color: '#f59e0b', cursor: 'help' }}>ⓘ</span>
+                    </div>
+                    <div className="table-container">
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr className="table-header">
+                            <th style={{ padding: '12px', textAlign: 'left' }}>Rent Change</th>
+                            <th style={{ padding: '12px', textAlign: 'center', color: '#ef4444' }}>Conservative IRR</th>
+                            <th style={{ padding: '12px', textAlign: 'center', color: '#3b82f6' }}>Base IRR</th>
+                            <th style={{ padding: '12px', textAlign: 'center', color: '#10b981' }}>Optimistic IRR</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {generateRentSensitivity().map((row, index) => (
+                            <tr key={index} className="table-row">
+                              <td style={{ padding: '12px' }}><span className="value-text">{row.rentChange}</span></td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}><span className="value-text">{row.conservative}%</span></td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}><span className="value-text">{row.base}%</span></td>
+                              <td style={{ padding: '12px', textAlign: 'center' }}><span className="value-text">{row.optimistic}%</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -1120,4 +929,4 @@ const CREAnalyzer = () => {
   );
 };
 
-export default CREAnalyzer;
+export default LeasrAnalyze;
