@@ -87,6 +87,40 @@ def parse_costar_data(text):
     
     return data
 
+def validate_extracted_data(data, doc_type):
+    """Validate extracted data with business logic"""
+    validation = {"isValid": True, "warnings": [], "errors": []}
+    
+    # Rent validation
+    if data.get("rent"):
+        if data["rent"] < 5 or data["rent"] > 200:
+            validation["warnings"].append(f"Rent ${data['rent']}/sf seems unusual (typical: $5-200/sf)")
+    
+    # Square footage validation
+    if data.get("sqft"):
+        if data["sqft"] < 500 or data["sqft"] > 1000000:
+            validation["warnings"].append(f"Square footage {data['sqft']:,} seems unusual")
+    
+    # Purchase price validation
+    if data.get("price") and data.get("sqft"):
+        price_per_sqft = data["price"] / data["sqft"]
+        if price_per_sqft < 50 or price_per_sqft > 2000:
+            validation["warnings"].append(f"Price per sqft ${price_per_sqft:.0f} seems unusual (typical: $50-2000/sf)")
+    
+    # CAM validation
+    if data.get("cam") and data["cam"] > 50:
+        validation["warnings"].append(f"CAM charges ${data['cam']}/sf seem high (typical: $2-15/sf)")
+    
+    # Cross-validation
+    if doc_type == 'costar' and not data.get("rent") and not data.get("sqft"):
+        validation["errors"].append("No rental or size data found in CoStar report")
+    
+    if doc_type == 'title' and not data.get("price"):
+        validation["errors"].append("No sale price found in title report")
+    
+    validation["isValid"] = len(validation["errors"]) == 0
+    return validation
+
 def parse_title_data(text):
     data = {}
     fullText = text.lower()
