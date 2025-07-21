@@ -2,11 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Upload, Calculator, FileText, TrendingUp, Building, DollarSign, BarChart3 } from 'lucide-react';
 
+// Sophisticated sage green and luxury cream palette
+const COLORS = {
+  bgPrimary: '#0a0a0b',
+  bgSecondary: '#1a1a1b',
+  cardBg: '#f5f3f0',
+  cardBorder: '#8b7355',
+  sage: '#4a5d3a',
+  sageLight: '#6b7c5c',
+  forest: '#2d3d20',
+  taupe: '#8b7355',
+  cream: '#f5f3f0',
+  creamLight: '#e8e4df',
+  textPrimary: '#ffffff',
+  textSecondary: '#f5f3f0',
+  autofill: '#6b7c5c',
+  error: '#b94a48',
+  warning: '#e8e4df'
+};
+
+const FONT_FAMILY = `'Cormorant Garamond', 'Manrope', 'serif'`;
+
 const LeasrAnalyze = () => {
   useEffect(() => {
-    // Remove previous style injection, let laboucle-theme.css handle global styles
-    document.body.classList.add('laboucle-theme');
-    return () => document.body.classList.remove('laboucle-theme');
+    document.body.style.background = COLORS.bgPrimary;
+    document.body.style.color = COLORS.textPrimary;
+    document.body.style.fontFamily = FONT_FAMILY;
+    return () => {
+      document.body.style.background = '';
+      document.body.style.color = '';
+      document.body.style.fontFamily = '';
+    };
   }, []);
 
   const [activeTab, setActiveTab] = useState('input');
@@ -286,39 +312,99 @@ const LeasrAnalyze = () => {
   };
 
   return (
-    <div className="container">
-      <div className="card" style={{ marginBottom: '2rem' }}>
+    <div
+      className="container"
+      style={{
+        maxWidth: 720, // Reduced from 1200 for a more elegant, readable width
+        margin: '3rem auto', // Adds vertical margin for luxury feel
+        padding: '0 2rem',   // More generous horizontal padding
+        fontFamily: FONT_FAMILY,
+        background: COLORS.bgPrimary,
+        color: COLORS.textPrimary,
+        borderRadius: 18, // Soft rounded corners for premium look
+        boxShadow: '0 8px 32px rgba(74,93,58,0.10)' // Subtle shadow for depth
+      }}
+    >
+      <div
+        className="card"
+        style={{
+          marginBottom: '2rem',
+          background: COLORS.cardBg,
+          border: `1.5px solid ${COLORS.sage}`,
+          borderRadius: 12,
+          boxShadow: '0 6px 24px rgba(74,93,58,0.08)'
+        }}
+      >
         {/* Header */}
-        <div className="header" style={{ marginBottom: '2rem', background: 'none', boxShadow: 'none', border: 'none' }}>
+        <div
+          className="header"
+          style={{
+            marginBottom: '2rem',
+            background: 'none',
+            boxShadow: 'none',
+            border: 'none',
+            padding: '2rem 0'
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '16px' }}>
-              <Building style={{ width: '48px', height: '48px', color: 'var(--color-primary)' }} />
-              <h1 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '2.5rem', marginBottom: 0 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '16px',
+              marginBottom: '16px'
+            }}>
+              <Building style={{ width: '48px', height: '48px', color: COLORS.sage }} />
+              <h1
+                style={{
+                  fontFamily: FONT_FAMILY,
+                  fontWeight: 700,
+                  fontSize: '2.7rem',
+                  marginBottom: 0,
+                  background: `linear-gradient(90deg, ${COLORS.sage}, ${COLORS.sageLight})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  letterSpacing: '2px'
+                }}
+              >
                 Leasr Analyze
               </h1>
             </div>
-            <p style={{ color: 'var(--color-text-light)', fontSize: '1.25rem', maxWidth: '600px', margin: '0 auto' }}>
+            <p style={{
+              color: COLORS.textSecondary,
+              fontSize: '1.25rem',
+              maxWidth: '600px',
+              margin: '0 auto',
+              fontFamily: FONT_FAMILY,
+              letterSpacing: '0.5px'
+            }}>
               AI-powered commercial real estate investment analysis with multi-scenario modeling and market intelligence
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '24px',
+              marginTop: '24px'
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <DollarSign style={{ width: '20px', height: '20px', color: 'var(--color-primary)' }} />
-                <span style={{ color: 'var(--color-text-light)', fontSize: '14px' }}>IRR Analysis</span>
+                <DollarSign style={{ width: '20px', height: '20px', color: COLORS.sage }} />
+                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>IRR Analysis</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart3 style={{ width: '20px', height: '20px', color: 'var(--color-primary)' }} />
-                <span style={{ color: 'var(--color-text-light)', fontSize: '14px' }}>Market Intelligence</span>
+                <BarChart3 style={{ width: '20px', height: '20px', color: COLORS.sage }} />
+                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>Market Intelligence</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calculator style={{ width: '20px', height: '20px', color: 'var(--color-primary)' }} />
-                <span style={{ color: 'var(--color-text-light)', fontSize: '14px' }}>Multi-Scenario</span>
+                <Calculator style={{ width: '20px', height: '20px', color: COLORS.sage }} />
+                <span style={{ color: COLORS.textSecondary, fontSize: '14px', fontFamily: FONT_FAMILY }}>Multi-Scenario</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--color-border)' }}>
+        <div style={{ marginBottom: '2rem', borderBottom: `1.5px solid ${COLORS.taupe}` }}>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
             {[
               { id: 'input', label: 'Deal Input', icon: FileText },
@@ -327,10 +413,25 @@ const LeasrAnalyze = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`button${activeTab === tab.id ? '' : ' button-outline'}`}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}
+                className="button"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '1.1rem',
+                  fontFamily: FONT_FAMILY,
+                  background: activeTab === tab.id ? COLORS.sage : COLORS.cardBg,
+                  color: activeTab === tab.id ? COLORS.textPrimary : COLORS.sage,
+                  border: `2px solid ${COLORS.sage}`,
+                  borderRadius: 8,
+                  boxShadow: activeTab === tab.id ? `0 2px 12px ${COLORS.sage}55` : 'none',
+                  fontWeight: 600,
+                  padding: '0.75rem 1.5rem',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer'
+                }}
               >
-                <tab.icon style={{ width: '18px', height: '18px' }} />
+                <tab.icon style={{ width: '18px', height: '18px', color: activeTab === tab.id ? COLORS.cardBg : COLORS.sage }} />
                 {tab.label}
               </button>
             ))}
@@ -342,12 +443,22 @@ const LeasrAnalyze = () => {
           {activeTab === 'input' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               {/* File Upload Section */}
-              <div className="card" style={{ textAlign: 'center', background: 'var(--color-bg-alt)' }}>
-                <Upload style={{ width: '48px', height: '48px', color: 'var(--color-primary)', margin: '0 auto 16px' }} />
-                <h3 className="section-title" style={{ fontSize: '1.25rem', marginBottom: '8px' }}>
+              <div className="card" style={{
+                textAlign: 'center',
+                background: COLORS.cardBg,
+                border: `1.5px solid ${COLORS.sageLight}`,
+                boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
+              }}>
+                <Upload style={{ width: '48px', height: '48px', color: COLORS.sage, margin: '0 auto 16px' }} />
+                <h3 className="section-title" style={{
+                  fontSize: '1.25rem',
+                  marginBottom: '8px',
+                  fontFamily: FONT_FAMILY,
+                  color: COLORS.sage
+                }}>
                   Upload CoStar or Title Report
                 </h3>
-                <p style={{ color: 'var(--color-text-light)', marginBottom: '24px' }}>
+                <p style={{ color: COLORS.textSecondary, marginBottom: '24px', fontFamily: FONT_FAMILY }}>
                   AI-powered parsing of PDF documents for instant data extraction
                 </p>
                 <input
@@ -363,30 +474,45 @@ const LeasrAnalyze = () => {
                 <label
                   htmlFor="file-upload"
                   className="button"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: COLORS.sage,
+                    color: COLORS.cardBg,
+                    fontFamily: FONT_FAMILY,
+                    fontWeight: 600,
+                    border: `2px solid ${COLORS.sage}`,
+                    borderRadius: 8,
+                    boxShadow: `0 2px 12px ${COLORS.sage}33`,
+                    cursor: 'pointer'
+                  }}
                 >
-                  <Upload style={{ width: '20px', height: '20px' }} />
+                  <Upload style={{ width: '20px', height: '20px', color: COLORS.cardBg }} />
                   Choose PDF File
                 </label>
                 {uploadStatus && (
                   <div style={{
                     marginTop: '16px',
                     padding: '12px 16px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: uploadStatus.includes('✅') ? '#e7f6e2' : 
-                                   uploadStatus.includes('❌') ? '#fdecea' : 
-                                   '#f4f4f4',
-                    border: `1px solid ${uploadStatus.includes('✅') ? '#b7e4c7' : 
-                                       uploadStatus.includes('❌') ? '#f8d7da' : 
-                                       'var(--color-border)'}`,
-                    color: uploadStatus.includes('✅') ? '#388e3c' : 
-                           uploadStatus.includes('❌') ? '#d32f2f' : 'var(--color-text-light)'
+                    borderRadius: 8,
+                    backgroundColor: uploadStatus.includes('✅') ? COLORS.creamLight : uploadStatus.includes('❌') ? '#3d1a1a' : COLORS.cardBg,
+                    border: `1.5px solid ${uploadStatus.includes('✅') ? COLORS.forest : uploadStatus.includes('❌') ? COLORS.error : COLORS.sageLight}`,
+                    color: uploadStatus.includes('✅') ? COLORS.forest : uploadStatus.includes('❌') ? COLORS.error : COLORS.sage,
+                    fontFamily: FONT_FAMILY,
+                    fontWeight: 600
                   }}>
                     {uploadStatus}
                   </div>
                 )}
                 {parsedData && (
-                  <div className="card" style={{ marginTop: '24px', textAlign: 'left', background: '#fff' }}>
+                  <div className="card" style={{
+                    marginTop: '24px',
+                    textAlign: 'left',
+                    background: COLORS.cardBg,
+                    border: `1.5px solid ${COLORS.sageLight}`,
+                    boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
+                  }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                       <h4 className="section-title">Extracted Data</h4>
                       <span style={{
@@ -470,9 +596,21 @@ const LeasrAnalyze = () => {
                 )}
               </div>
               {/* Benchmark Data */}
-              <div className="card">
-                <h3 className="section-title">Benchmark Data</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+              <div className="card" style={{
+                background: COLORS.cardBg,
+                border: `1.5px solid ${COLORS.sageLight}`,
+                boxShadow: '0 2px 12px rgba(74,93,58,0.05)'
+              }}>
+                <h3 className="section-title" style={{
+                  fontFamily: FONT_FAMILY,
+                  color: COLORS.sage,
+                  fontWeight: 700
+                }}>Benchmark Data</h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '24px'
+                }}>
                   {[
                     { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
                     { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00' },
@@ -482,10 +620,24 @@ const LeasrAnalyze = () => {
                     { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000' }
                   ].map(field => (
                     <div key={field.key}>
-                      <label style={{ display: 'block', marginBottom: '8px', color: 'var(--color-text-light)' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '8px',
+                        color: COLORS.sage,
+                        fontFamily: FONT_FAMILY,
+                        fontWeight: 600
+                      }}>
                         {field.label}
                         {autoFilledFields.has(field.key) && (
-                          <span style={{ marginLeft: '8px', fontSize: '10px', color: 'var(--color-primary)', fontWeight: '500' }}>
+                          <span style={{
+                            marginLeft: '8px',
+                            fontSize: '10px',
+                            color: COLORS.autofill,
+                            fontWeight: '600',
+                            background: `${COLORS.autofill}22`,
+                            padding: '2px 8px',
+                            borderRadius: '8px'
+                          }}>
                             ✨ AUTO-FILLED
                           </span>
                         )}
@@ -496,20 +648,28 @@ const LeasrAnalyze = () => {
                         onChange={(e) => handleBenchmarkChange(field.key, e.target.value)}
                         className="input-field"
                         style={{
-                          backgroundColor: 'var(--color-bg-alt)',
-                          borderColor: 'var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          color: 'var(--color-text)',
+                          backgroundColor: COLORS.bgSecondary,
+                          borderColor: COLORS.sage,
+                          borderRadius: 8,
+                          color: COLORS.textPrimary,
                           padding: '12px 16px',
-                          fontSize: '14px',
-                          width: '100%'
+                          fontSize: '15px',
+                          width: '100%',
+                          fontFamily: FONT_FAMILY,
+                          fontWeight: 500,
+                          outline: 'none',
+                          boxShadow: 'none',
+                          transition: 'border-color 0.2s',
                         }}
                         placeholder={field.placeholder}
+                        onFocus={e => e.target.style.borderColor = COLORS.sageLight}
+                        onBlur={e => e.target.style.borderColor = COLORS.sage}
                       />
                     </div>
                   ))}
                 </div>
               </div>
+              {/* ...other sections (General Params, Scenarios, etc.) should follow the same color/font logic... */}
             </div>
           )}
           {activeTab === 'results' && results && (
