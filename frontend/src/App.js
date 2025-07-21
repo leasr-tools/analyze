@@ -49,26 +49,26 @@ const LeasrAnalyze = () => {
 
   const [activeTab, setActiveTab] = useState('input');
   const [benchmarkData, setBenchmarkData] = useState({
-    rent: '',
-    cam: '',
-    taxes: '',
-    operatingExpenses: '',
-    sqft: '',
-    purchasePrice: '',
+    rent: '25.00',
+    cam: '5.00',
+    taxes: '2.00',
+    operatingExpenses: '75000',
+    sqft: '10000',
+    purchasePrice: '1000000',
     propertyType: 'office',
   });
 
   const [generalParams, setGeneralParams] = useState({
-    monthlyOperatingExpenses: '',
+    monthlyOperatingExpenses: '5000',
     holdPeriod: '10',
     interestOnlyPeriod: '2',
     loanTerm: '25',
   });
 
   const [scenarios, setScenarios] = useState({
-    conservative: { rent: '', downPayment: '', interestRate: '', appreciation: '' },
-    base: { rent: '', downPayment: '', interestRate: '', appreciation: '' },
-    optimistic: { rent: '', downPayment: '', interestRate: '', appreciation: '' },
+    conservative: { rent: '20.00', downPayment: '30', interestRate: '6.0', appreciation: '2' },
+    base: { rent: '25.00', downPayment: '25', interestRate: '5.5', appreciation: '3' },
+    optimistic: { rent: '30.00', downPayment: '20', interestRate: '5.0', appreciation: '4' },
   });
 
   const [results, setResults] = useState(null);
@@ -117,12 +117,23 @@ const LeasrAnalyze = () => {
       setParsedData(extractedData);
 
       const newAutoFilled = new Set();
+      const defaultValues = {
+        rent: '25.00',
+        cam: '5.00',
+        taxes: '2.00',
+        operatingExpenses: '75000',
+        sqft: '10000',
+        purchasePrice: '1000000',
+        propertyType: 'office',
+      };
       ['rent', 'sqft', 'cam', 'taxes', 'price', 'operatingExpenses', 'propertyType'].forEach(
         (key) => {
-          if (extractedData[key]) {
+          if (extractedData[key] && !isNaN(extractedData[key])) {
             const field = key === 'price' ? 'purchasePrice' : key;
             setBenchmarkData((prev) => ({ ...prev, [field]: extractedData[key].toString() }));
             newAutoFilled.add(field);
+          } else {
+            setBenchmarkData((prev) => ({ ...prev, [key]: defaultValues[key] }));
           }
         }
       );
@@ -143,12 +154,31 @@ const LeasrAnalyze = () => {
           sqft: parseFloat(benchmarkData.sqft) || 10000,
           cam: parseFloat(benchmarkData.cam) || 5,
           taxes: parseFloat(benchmarkData.taxes) || 2,
-          monthlyOperatingExpenses: parseFloat(generalParams.monthlyOperatingExpenses) || 0,
+          monthlyOperatingExpenses: parseFloat(generalParams.monthlyOperatingExpenses) || 5000,
           holdPeriod: parseInt(generalParams.holdPeriod) || 10,
           loanTerm: parseInt(generalParams.loanTerm) || 25,
           interestOnlyPeriod: parseInt(generalParams.interestOnlyPeriod) || 2,
         },
-        scenarios,
+        scenarios: {
+          conservative: {
+            rent: parseFloat(scenarios.conservative.rent) || 20,
+            downPayment: parseFloat(scenarios.conservative.downPayment) || 30,
+            interestRate: parseFloat(scenarios.conservative.interestRate) || 6.0,
+            appreciation: parseFloat(scenarios.conservative.appreciation) || 2,
+          },
+          base: {
+            rent: parseFloat(scenarios.base.rent) || 25,
+            downPayment: parseFloat(scenarios.base.downPayment) || 25,
+            interestRate: parseFloat(scenarios.base.interestRate) || 5.5,
+            appreciation: parseFloat(scenarios.base.appreciation) || 3,
+          },
+          optimistic: {
+            rent: parseFloat(scenarios.optimistic.rent) || 30,
+            downPayment: parseFloat(scenarios.optimistic.downPayment) || 20,
+            interestRate: parseFloat(scenarios.optimistic.interestRate) || 5.0,
+            appreciation: parseFloat(scenarios.optimistic.appreciation) || 4,
+          },
+        },
       };
 
       const response = await fetch(`${API_BASE_URL}/calculate-metrics`, {
@@ -187,8 +217,8 @@ const LeasrAnalyze = () => {
       ['conservative', 'base', 'optimistic'].forEach((scenario) => {
         if (results && results[scenario]) {
           const purchasePrice = parseFloat(benchmarkData.purchasePrice) || 1000000;
-          const downPayment = parseFloat(scenarios[scenario].downPayment) || 25;
-          const appreciation = parseFloat(scenarios[scenario].appreciation) || 3;
+          const downPayment = parseFloat(scenarios[scenario].downPayment) || { conservative: 30, base: 25, optimistic: 20 }[scenario];
+          const appreciation = parseFloat(scenarios[scenario].appreciation) || { conservative: 2, base: 3, optimistic: 4 }[scenario];
           const currentValue = purchasePrice * Math.pow(1 + appreciation / 100, year);
           const equity = currentValue - purchasePrice * (1 - downPayment / 100);
           dataPoint[`${scenario}Equity`] = equity;
@@ -300,12 +330,12 @@ const LeasrAnalyze = () => {
               <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>Benchmark Data</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 {[
-                  { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
-                  { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00' },
-                  { key: 'taxes', label: 'Taxes ($/sqft)', placeholder: '3.50' },
-                  { key: 'sqft', label: 'Square Feet', placeholder: '10000' },
-                  { key: 'purchasePrice', label: 'Purchase Price', placeholder: '1000000' },
-                  { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000' },
+                  { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00', defaultValue: '25.00' },
+                  { key: 'cam', label: 'CAM ($/sqft)', placeholder: '5.00', defaultValue: '5.00' },
+                  { key: 'taxes', label: 'Taxes ($/sqft)', placeholder: '2.00', defaultValue: '2.00' },
+                  { key: 'sqft', label: 'Square Feet', placeholder: '10000', defaultValue: '10000' },
+                  { key: 'purchasePrice', label: 'Purchase Price', placeholder: '1000000', defaultValue: '1000000' },
+                  { key: 'operatingExpenses', label: 'Operating Expenses', placeholder: '75000', defaultValue: '75000' },
                 ].map((field) => (
                   <div key={field.key}>
                     <label style={{ display: 'block', marginBottom: '0.3rem', color: COLORS.textSecondary }}>
@@ -321,7 +351,7 @@ const LeasrAnalyze = () => {
                         padding: '0.6rem 0.8rem',
                         border: `1px solid ${COLORS.cardBorder}`,
                         borderRadius: 6,
-                        background: '#fff',
+                        background: benchmarkData[field.key] === field.defaultValue && !autoFilledFields.has(field.key) ? COLORS.autofill : '#fff',
                         color: COLORS.textPrimary,
                       }}
                     />
@@ -335,10 +365,10 @@ const LeasrAnalyze = () => {
               <h3 style={{ color: COLORS.accent, marginBottom: '1rem' }}>General Parameters</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 {[
-                  { key: 'monthlyOperatingExpenses', label: 'Monthly OpEx ($)', placeholder: '5000' },
-                  { key: 'holdPeriod', label: 'Hold Period (years)', placeholder: '10' },
-                  { key: 'interestOnlyPeriod', label: 'Interest Only Period (years)', placeholder: '2' },
-                  { key: 'loanTerm', label: 'Loan Term (years)', placeholder: '25' },
+                  { key: 'monthlyOperatingExpenses', label: 'Monthly OpEx ($)', placeholder: '5000', defaultValue: '5000' },
+                  { key: 'holdPeriod', label: 'Hold Period (years)', placeholder: '10', defaultValue: '10' },
+                  { key: 'interestOnlyPeriod', label: 'Interest Only Period (years)', placeholder: '2', defaultValue: '2' },
+                  { key: 'loanTerm', label: 'Loan Term (years)', placeholder: '25', defaultValue: '25' },
                 ].map((field) => (
                   <div key={field.key}>
                     <label style={{ display: 'block', marginBottom: '0.3rem', color: COLORS.textSecondary }}>
@@ -354,7 +384,7 @@ const LeasrAnalyze = () => {
                         padding: '0.6rem 0.8rem',
                         border: `1px solid ${COLORS.cardBorder}`,
                         borderRadius: 6,
-                        background: '#fff',
+                        background: generalParams[field.key] === field.defaultValue ? COLORS.autofill : '#fff',
                         color: COLORS.textPrimary,
                       }}
                     />
@@ -373,10 +403,10 @@ const LeasrAnalyze = () => {
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                     {[
-                      { key: 'rent', label: 'Rent ($/sqft)', placeholder: '25.00' },
-                      { key: 'downPayment', label: 'Down Payment (%)', placeholder: '25' },
-                      { key: 'interestRate', label: 'Interest Rate (%)', placeholder: '5.5' },
-                      { key: 'appreciation', label: 'Appreciation (%)', placeholder: '3' },
+                      { key: 'rent', label: 'Rent ($/sqft)', placeholder: scenario === 'conservative' ? '20.00' : scenario === 'base' ? '25.00' : '30.00', defaultValue: scenario === 'conservative' ? '20.00' : scenario === 'base' ? '25.00' : '30.00' },
+                      { key: 'downPayment', label: 'Down Payment (%)', placeholder: scenario === 'conservative' ? '30' : scenario === 'base' ? '25' : '20', defaultValue: scenario === 'conservative' ? '30' : scenario === 'base' ? '25' : '20' },
+                      { key: 'interestRate', label: 'Interest Rate (%)', placeholder: scenario === 'conservative' ? '6.0' : scenario === 'base' ? '5.5' : '5.0', defaultValue: scenario === 'conservative' ? '6.0' : scenario === 'base' ? '5.5' : '5.0' },
+                      { key: 'appreciation', label: 'Appreciation (%)', placeholder: scenario === 'conservative' ? '2' : scenario === 'base' ? '3' : '4', defaultValue: scenario === 'conservative' ? '2' : scenario === 'base' ? '3' : '4' },
                     ].map((field) => (
                       <div key={`${scenario}-${field.key}`}>
                         <label style={{ display: 'block', marginBottom: '0.3rem', color: COLORS.textSecondary }}>
@@ -392,7 +422,7 @@ const LeasrAnalyze = () => {
                             padding: '0.6rem 0.8rem',
                             border: `1px solid ${COLORS.cardBorder}`,
                             borderRadius: 6,
-                            background: '#fff',
+                            background: scenarios[scenario][field.key] === field.defaultValue ? COLORS.autofill : '#fff',
                             color: COLORS.textPrimary,
                           }}
                         />
